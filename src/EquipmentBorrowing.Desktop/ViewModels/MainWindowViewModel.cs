@@ -16,6 +16,9 @@ public partial class MainWindowViewModel : ObservableObject
         _equipmentViewModel = equipmentViewModel;
         _borrowingsViewModel = borrowingsViewModel;
         CurrentView = _equipmentViewModel;
+
+        _ = _equipmentViewModel.LoadCommand.ExecuteAsync(null);
+        _ = _borrowingsViewModel.LoadCommand.ExecuteAsync(null);
     }
 
     [RelayCommand]

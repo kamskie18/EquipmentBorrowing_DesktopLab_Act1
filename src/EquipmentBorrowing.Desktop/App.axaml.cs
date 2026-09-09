@@ -1,12 +1,12 @@
 ﻿using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Microsoft.Extensions.DependencyInjection;
 using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Application.Services;
+using EquipmentBorrowing.Infrastructure.Repositories;
 using EquipmentBorrowing.Desktop.ViewModels;
 using EquipmentBorrowing.Desktop.Views;
-using EquipmentBorrowing.Infrastructure.Repositories;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace EquipmentBorrowing.Desktop;
 
@@ -26,6 +26,7 @@ public partial class App : Avalonia.Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var mainWindowViewModel = provider.GetRequiredService<MainWindowViewModel>();
+
             desktop.MainWindow = new MainWindow
             {
                 DataContext = mainWindowViewModel
@@ -37,16 +38,13 @@ public partial class App : Avalonia.Application
 
     private static void ConfigureServices(ServiceCollection services)
     {
-        // Repositories (Singleton to retain state)
         services.AddSingleton<IStudentRepository, InMemoryStudentRepository>();
         services.AddSingleton<IEquipmentRepository, InMemoryEquipmentRepository>();
         services.AddSingleton<IBorrowingRepository, InMemoryBorrowingRepository>();
 
-        // Application Services
         services.AddTransient<BorrowEquipmentService>();
-        
+        services.AddTransient<ReturnEquipmentService>();
 
-        // ViewModels
         services.AddSingleton<EquipmentViewModel>();
         services.AddSingleton<BorrowingsViewModel>();
         services.AddSingleton<MainWindowViewModel>();

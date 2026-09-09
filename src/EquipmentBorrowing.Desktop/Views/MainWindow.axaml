@@ -1,7 +1,7 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
-        x:Class="EquipmentBorrowing.Desktop.MainWindow"
+        x:Class="EquipmentBorrowing.Desktop.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="Campus Equipment Borrowing System"
         Width="900" Height="600">
