@@ -20,6 +20,11 @@ public class BorrowEquipmentService
         _borrowingRepository = borrowingRepository;
     }
 
+    /// <summary>
+    /// Executes the Borrow Equipment use case, invoked by EquipmentViewModel via the UI.
+    /// </summary>
+
+
     public async Task<BorrowResult> BorrowAsync(int studentId, int equipmentId, CancellationToken cancellationToken = default)
     {
         var student = await _studentRepository.GetByIdAsync(studentId, cancellationToken);
