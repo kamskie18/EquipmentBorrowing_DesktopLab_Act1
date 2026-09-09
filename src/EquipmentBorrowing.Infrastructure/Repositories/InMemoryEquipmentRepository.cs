@@ -21,4 +21,8 @@ public class InMemoryEquipmentRepository : IEquipmentRepository
     {
         return Task.CompletedTask; // reference type — list already reflects the change
     }
+    public Task<IEnumerable<Equipment>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IEnumerable<Equipment>>(_equipment);
+    }
 }
