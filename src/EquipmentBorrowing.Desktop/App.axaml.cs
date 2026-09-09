@@ -44,7 +44,7 @@ public partial class App : Avalonia.Application
 
         // Application Services
         services.AddTransient<BorrowEquipmentService>();
-        services.AddTransient<ReturnEquipmentService>();
+        
 
         // ViewModels
         services.AddSingleton<EquipmentViewModel>();
