@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Threading.Tasks;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
@@ -22,8 +23,16 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ShowEquipment() => CurrentView = _equipmentViewModel;
+    private async Task ShowEquipmentAsync()
+    {
+        CurrentView = _equipmentViewModel;
+        await _equipmentViewModel.LoadCommand.ExecuteAsync(null);
+    }
 
     [RelayCommand]
-    private void ShowBorrowings() => CurrentView = _borrowingsViewModel;
+    private async Task ShowBorrowingsAsync()
+    {
+        CurrentView = _borrowingsViewModel;
+        await _borrowingsViewModel.LoadCommand.ExecuteAsync(null);
+    }
 }
