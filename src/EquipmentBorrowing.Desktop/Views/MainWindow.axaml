@@ -1,22 +1,30 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="EquipmentBorrowing.Desktop.Views.MainWindow"
-        x:DataType="vm:MainViewModel"
-        Icon="/Assets/avalonia-logo.ico"
-        Title="EquipmentBorrowing.Desktop">
+        x:Class="EquipmentBorrowing.Desktop.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="Campus Equipment Borrowing System"
+        Width="900" Height="600">
 
-    <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainViewModel />
-    </Design.DataContext>
+    <Grid ColumnDefinitions="200,*">
 
-    <TextBox Text="{Binding Greeting}"
-             HorizontalAlignment="Center"
-             VerticalAlignment="Center" />
+        <!-- Sidebar -->
+        <StackPanel Grid.Column="0" Background="#2C3E50" Spacing="4" Margin="0">
+            <TextBlock Text="Campus Equipment"
+                       FontSize="18" FontWeight="Bold"
+                       Foreground="White" Margin="16"/>
+            <Button Content="Equipment"
+                    Command="{Binding ShowEquipmentCommand}"
+                    HorizontalAlignment="Stretch" Margin="8,4"/>
+            <Button Content="Active Borrowings"
+                    Command="{Binding ShowBorrowingsCommand}"
+                    HorizontalAlignment="Stretch" Margin="8,4"/>
+        </StackPanel>
 
+        <!-- Main content area -->
+        <ContentControl Grid.Column="1"
+                         Content="{Binding CurrentView}"
+                         Margin="16"/>
+
+    </Grid>
 </Window>

@@ -2,6 +2,6 @@
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
-public abstract class ViewModelBase : ObservableObject
+public partial class EquipmentViewModel : ObservableObject
 {
 }
