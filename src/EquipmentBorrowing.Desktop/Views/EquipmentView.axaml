@@ -13,7 +13,7 @@
                  SelectedItem="{Binding SelectedEquipment}">
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Border Padding="8" Margin="0,2" BorderBrush="Gray" BorderThickness="0,0,0,1">
+                    <Border Padding="8" Margin="0,2" BorderBrush="blue" BorderThickness="0,0,0,1">
                         <StackPanel>
                             <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
                             <TextBlock Text="{Binding IsAvailable, StringFormat='Available: {0}'}"/>
@@ -38,7 +38,7 @@
                     Command="{Binding BorrowCommand}"
                     HorizontalAlignment="Left"/>
 
-            <TextBlock Text="{Binding StatusMessage}" Foreground="Red"/>
+            <TextBlock Text="{Binding StatusMessage}" Foreground="red"/>
         </StackPanel>
 
     </Grid>
