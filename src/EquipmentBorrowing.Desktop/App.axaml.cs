@@ -51,7 +51,8 @@ public partial class App : Avalonia.Application
         var dbPath = Path.Combine(AppContext.BaseDirectory, "equipmentborrowing.db");
 
         services.AddDbContext<EquipmentBorrowingDbContext>(options =>
-            options.UseSqlite($"Data Source={dbPath}"));
+    options.UseSqlite($"Data Source={dbPath}")
+           .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information));
 
         services.AddScoped<IStudentRepository, EfStudentRepository>();
         services.AddScoped<IEquipmentRepository, EfEquipmentRepository>();

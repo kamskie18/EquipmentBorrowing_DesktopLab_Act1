@@ -25,4 +25,9 @@ public class InMemoryEquipmentRepository : IEquipmentRepository
     {
         return Task.FromResult<IEnumerable<Equipment>>(_equipment);
     }
+    public Task<IEnumerable<Equipment>> GetAvailableAsync(CancellationToken cancellationToken = default)
+    {
+        var available = _equipment.Where(e => e.IsAvailable);
+        return Task.FromResult<IEnumerable<Equipment>>(available);
+    }
 }

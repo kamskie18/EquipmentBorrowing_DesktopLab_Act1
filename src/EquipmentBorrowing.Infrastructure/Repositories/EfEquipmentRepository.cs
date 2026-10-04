@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Domain;
 using EquipmentBorrowing.Infrastructure.Persistence;
@@ -22,6 +23,11 @@ public class EfEquipmentRepository : IEquipmentRepository
     public async Task<IEnumerable<Equipment>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await _context.Equipment.AsNoTracking().ToListAsync(cancellationToken);
+    }
+
+    public async Task<IEnumerable<Equipment>> GetAvailableAsync(CancellationToken cancellationToken = default)
+    {
+        return await _context.Equipment.AsNoTracking().Where(e => e.IsAvailable).ToListAsync(cancellationToken);
     }
 
     public async Task UpdateAsync(Equipment equipment, CancellationToken cancellationToken = default)
