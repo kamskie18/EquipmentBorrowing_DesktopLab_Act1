@@ -64,5 +64,7 @@ public partial class App : Avalonia.Application
         services.AddScoped<EquipmentViewModel>();
         services.AddScoped<BorrowingsViewModel>();
         services.AddScoped<MainWindowViewModel>();
+
     }
+
 }

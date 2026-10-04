@@ -205,3 +205,186 @@ available equipment as well, since that list is also reloaded on navigation.
    So if we swapped in SQLite, we'd just need to create new repository classes like SqliteEquipmentRepository that 
    implement the same interfaces, and change the registration line in App.axaml.cs to point to those instead. 
    Everything else stays the same, which honestly is the whole point of doing it this way.
+
+
+
+    Laboratory Activity 3 - SQLite and Entity Framework Core
+
+
+1. Relational Database Design
+
+The database has three tables that mirror the domain models from Activity 1. Students and
+Equipment are both referenced by Borrowings through foreign keys, so a borrowing record always
+points back to exactly one student and one equipment item instead of repeating their information.
+
+STUDENTS
+StudentId PK
+Name
+IsAllowedToBorrow
+
+EQUIPMENT
+EquipmentId PK
+Name
+IsAvailable
+
+BORROWINGS
+BorrowingId PK
+StudentId FK
+EquipmentId FK
+DateBorrowed
+ExpectedReturnDate
+Status
+
+Students to Borrowings is one to many, and Equipment to Borrowings is one to many as well. A
+student can have several borrowing records over time, and a piece of equipment can appear in
+several borrowing records too, but each borrowing only ever belongs to one student and one
+equipment item. The diagram is saved at docs/database-diagram.png.
+
+Name fields on Students and Equipment are required with a max length, and the two foreign keys
+on Borrowings use restrict delete behavior so a student or equipment record can't be removed while
+it still has borrowing history attached. Indexes were added on StudentId and EquipmentId inside
+Borrowings since those are the columns we filter on most often.
+
+2. SQLite and EF Core
+
+We added the Microsoft.EntityFrameworkCore.Sqlite, Microsoft.EntityFrameworkCore.Design, and
+Microsoft.EntityFrameworkCore.Tools packages to the Infrastructure project. A new Persistence
+folder was created to hold the DbContext and the entity configuration classes, and the old
+in-memory repositories were replaced with EF Core backed versions that still implement the same
+interfaces from Activity 1.
+
+3. DbContext
+
+EquipmentBorrowingDbContext represents the database session for the whole application. It exposes
+a DbSet for Students, Equipment, and Borrowings, and it applies all the entity configurations
+automatically through OnModelCreating. It gets its connection string through its constructor the
+same way everything else in this project receives its dependencies, so it never hardcodes where
+the database file actually lives. It is only ever used inside the Infrastructure repositories and
+inside App.axaml.cs, never inside a View or a ViewModel.
+
+4. Repository Transition
+
+Before this activity, IEquipmentRepository, IStudentRepository, and IBorrowingRepository were all
+implemented by classes that stored everything in a plain C# List, which meant the data disappeared
+the moment the app closed. Those were replaced with EfEquipmentRepository, EfStudentRepository,
+and EfBorrowingRepository, which now read from and write to the SQLite database through the
+DbContext. Since BorrowEquipmentService, ReturnEquipmentService, and every ViewModel only ever
+depended on the repository interfaces and never on the concrete in-memory classes, none of that
+code had to change at all for this swap to work.
+
+5. Migration Process
+
+The initial migration was created through the Package Manager Console with the default project set
+to EquipmentBorrowing.Infrastructure, using
+
+Add-Migration InitialCreate -Project EquipmentBorrowing.Infrastructure -StartupProject EquipmentBorrowing.Desktop
+
+and then applied with
+
+Update-Database -Project EquipmentBorrowing.Infrastructure -StartupProject EquipmentBorrowing.Desktop
+
+The app also calls dbContext.Database.Migrate() automatically when it starts up, so the database
+gets created and any pending migrations get applied without anyone needing to run those commands
+manually.
+
+6. Generated SQL
+
+LINQ Query
+Retrieve all equipment, used by EquipmentViewModel to populate the Equipment screen.
+
+_context.Equipment.AsNoTracking().ToListAsync(cancellationToken);
+
+Generated SQL
+
+SELECT "e"."EquipmentId", "e"."Name", "e"."IsAvailable"
+FROM "Equipment" AS "e"
+
+Explanation
+This just pulls every column from the Equipment table with no filtering at all, which matches the
+plain LINQ call with no Where clause.
+
+LINQ Query
+Retrieve active borrowings, used by BorrowingsViewModel to populate the Active Borrowings screen.
+
+_context.Borrowings.AsNoTracking().Where(b => b.Status == BorrowingStatus.Active).ToListAsync(cancellationToken);
+
+Generated SQL
+
+SELECT "b"."BorrowingId", "b"."DateBorrowed", "b"."EquipmentId", "b"."ExpectedReturnDate",
+       "b"."StudentId", "b"."Status"
+FROM "Borrowings" AS "b"
+WHERE "b"."Status" = 0
+
+Explanation
+The Where clause in the LINQ query becomes an actual SQL WHERE clause here, so the filtering
+happens inside SQLite itself instead of loading every borrowing into memory first and filtering
+in C#. The 0 is the integer value EF Core stores for BorrowingStatus.Active.
+
+Both of these were confirmed by temporarily enabling EF Core logging on the DbContext with LogTo
+and watching the output while navigating between the Equipment and Active Borrowings screens.
+
+7. Tracking Decisions
+
+GetAllAsync and the active borrowings query both use AsNoTracking because they only exist to show
+data on screen, nothing about them changes an entity afterward, so there's no reason for EF Core to
+keep watching those objects for changes. The GetByIdAsync call that runs right before UpdateAsync
+does not use AsNoTracking, because the equipment or borrowing returned from that call is about to
+get modified (MarkAsBorrowed, MarkAsReturned) and EF Core needs to actually be tracking it to know
+what changed once SaveChangesAsync runs.
+
+8. Persistence Demonstration
+
+We tested this by borrowing a piece of equipment, confirming it showed up right away on the Active
+Borrowings screen, then fully closing the app and opening it again. The borrowing was still there
+after restarting, which proved the data was actually coming from the SQLite file and not just
+sitting in memory like it was in Activity 2. We repeated the same test for returning equipment,
+closing and reopening the app again afterward, and the returned state was still correct too.
+
+9. Architectural Reflection
+
+1. Why did the application not need to be completely rewritten when SQLite was introduced?
+
+-Because everything above Infrastructure only ever talked to the repository interfaces, not the
+actual in-memory classes. So swapping what's behind those interfaces was basically the only
+change that had to happen. Domain, Application, and the whole Desktop UI stayed exactly the same.
+
+2. Why should the ViewModel not use DbContext directly?
+
+-Same reason as not letting the View touch a repository directly back in Activity 2. If the
+ViewModel used DbContext itself it would be tightly stuck to EF Core and SQLite specifically, and
+it would also probably end up skipping the validation rules that are supposed to live in the
+Application services. The ViewModel's job is to manage the screen, not to know how data gets saved.
+
+3. What responsibility does the repository implementation now perform?
+
+-It's the bridge that actually talks to the database. Before it was just reading and writing to a
+List, now it translates the repository interface calls into real EF Core queries against
+EquipmentBorrowingDbContext, which then get turned into actual SQL that runs against SQLite.
+
+4. What is the purpose of an EF Core migration?
+
+-It keeps a record of how the database schema should look and how it changed over time, so the
+schema can be recreated or updated automatically instead of someone manually writing CREATE TABLE
+statements by hand. It's basically version control for the database structure.
+
+5. Why are foreign keys important in the borrowing database?
+
+-They make sure a borrowing record can't point to a student or equipment item that doesn't
+actually exist. Without them nothing would stop a bad StudentId or EquipmentId from being saved,
+and the whole point of referencing instead of duplicating data falls apart if the reference isn't
+actually enforced.
+
+6. Why can a read only query benefit from AsNoTracking()?
+
+-Because EF Core normally keeps track of every entity it loads in case you change it later, and
+that tracking costs memory and a bit of performance. If we're only displaying the data and never
+going to modify those exact objects, there's no reason to pay that cost, so AsNoTracking just skips
+it and makes the query a little faster and lighter.
+
+7. What would happen to the rest of the application if the SQLite implementation were replaced
+   later by another database provider?
+
+-Pretty much the same thing that happened when we moved from in-memory to SQLite in this activity.
+Only the Infrastructure project would need new repository classes and a different connection setup
+in App.axaml.cs, since everything else only depends on the repository interfaces and has no idea
+SQLite was ever involved in the first place.
