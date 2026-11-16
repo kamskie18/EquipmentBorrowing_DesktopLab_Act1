@@ -1,0 +1,117 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+             x:Class="EquipmentBorrowing.Desktop.Views.StudentsView"
+             x:DataType="vm:StudentsViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="16">
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Student Management" FontSize="20" FontWeight="Bold" Margin="0,0,0,12"/>
+
+        <!-- Main Body: 2 Columns -->
+        <Grid Grid.Row="1" ColumnDefinitions="1.2*,1.5*" Margin="0,0,0,8">
+
+            <!-- Left: Student List -->
+            <Border Grid.Column="0" Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,12,0">
+                <Grid RowDefinitions="Auto,*">
+                    <TextBlock Grid.Row="0" Text="Registered Students" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <ListBox Grid.Row="1"
+                             ItemsSource="{Binding Students}"
+                             SelectedItem="{Binding SelectedStudent}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="8" Margin="0,2" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <Border Grid.Column="0" Background="#3182CE" CornerRadius="4" Padding="6,2" Margin="0,0,8,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding StudentNumber}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
+                                            <TextBlock Text="{Binding ContactInfo, TargetNullValue='No contact info'}" FontSize="11" Foreground="#718096"/>
+                                        </StackPanel>
+                                        <Border Grid.Column="2"
+                                                Background="{Binding IsAllowedToBorrow, Converter={x:Null}}"
+                                                CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding IsAllowedToBorrow, StringFormat='Eligible: {0}'}" FontSize="11" FontWeight="SemiBold"/>
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Grid>
+            </Border>
+
+            <!-- Right: Forms (Registration & Edit & Eligibility) -->
+            <ScrollViewer Grid.Column="1">
+                <StackPanel Spacing="16">
+
+                    <!-- Registration Box (UC-12) -->
+                    <Border Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="12">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Register New Student (UC-12)" FontWeight="Bold" Foreground="#2B6CB0"/>
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                                    <TextBlock Text="Student Number:" FontSize="11"/>
+                                    <TextBox Text="{Binding NewStudentNumber}" PlaceholderText="e.g. S1005"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                    <TextBlock Text="Full Name:" FontSize="11"/>
+                                    <TextBox Text="{Binding NewName}" PlaceholderText="e.g. Juan Luna"/>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Text="Contact Information (Optional):" FontSize="11"/>
+                            <TextBox Text="{Binding NewContactInfo}" PlaceholderText="e.g. email or phone"/>
+                            <Button Content="Register Student" Command="{Binding RegisterStudentCommand}" HorizontalAlignment="Right" Background="#3182CE" Foreground="White"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Edit Student Box (UC-13) -->
+                    <Border Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="12">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Edit Selected Student (UC-13)" FontWeight="Bold" Foreground="#2B6CB0"/>
+                            <Grid ColumnDefinitions="*,*">
+                                <StackPanel Grid.Column="0" Margin="0,0,4,0">
+                                    <TextBlock Text="Student Number:" FontSize="11"/>
+                                    <TextBox Text="{Binding EditStudentNumber}"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Margin="4,0,0,0">
+                                    <TextBlock Text="Full Name:" FontSize="11"/>
+                                    <TextBox Text="{Binding EditName}"/>
+                                </StackPanel>
+                            </Grid>
+                            <TextBlock Text="Contact Information:" FontSize="11"/>
+                            <TextBox Text="{Binding EditContactInfo}"/>
+                            <Button Content="Save Changes" Command="{Binding UpdateStudentCommand}" HorizontalAlignment="Right"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Eligibility Management Box (UC-14) -->
+                    <Border Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="12">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Borrowing Eligibility (UC-14)" FontWeight="Bold" Foreground="#2B6CB0"/>
+                            <TextBlock Text="Restricting prevents new borrowings while preserving existing active loans and allowing returns." FontSize="11" Foreground="#4A5568" TextWrapping="Wrap"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="Permit to Borrow" Command="{Binding PermitStudentCommand}" Background="#38A169" Foreground="White"/>
+                                <Button Content="Restrict Borrowing" Command="{Binding RestrictStudentCommand}" Background="#E53E3E" Foreground="White"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- Footer / Status Feedback (BR-18, BR-19) -->
+        <Border Grid.Row="2" Background="#EDF2F7" Padding="10,6" CornerRadius="4">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <ProgressBar IsIndeterminate="True" Width="20" Height="20" IsVisible="{Binding IsLoading}"/>
+                <TextBlock Text="{Binding StatusMessage}"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"/>
+            </StackPanel>
+        </Border>
+
+    </Grid>
+</UserControl>

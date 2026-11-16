@@ -1,0 +1,232 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+             xmlns:models="using:EquipmentBorrowing.Application.Models"
+             x:Class="EquipmentBorrowing.Desktop.Views.HistoryView"
+             x:DataType="vm:HistoryViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="16">
+
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Borrowing Histories &amp; Search (UC-07, UC-08, UC-09)" FontSize="20" FontWeight="Bold" Margin="0,0,0,12"/>
+
+        <!-- Main Body: Tabs -->
+        <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTab}">
+
+            <!-- Tab 1: Global Search, Filter, Sort (UC-09) -->
+            <TabItem Header="Search &amp; Filter (UC-09)">
+                <Grid RowDefinitions="Auto,*" Margin="0,12,0,0">
+
+                    <!-- Search & Filter Controls (BR-17) -->
+                    <Border Grid.Row="0" Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                        <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="2*,1*,1*,1*,Auto,Auto">
+
+                            <!-- Search Text -->
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,6">
+                                <TextBlock Text="Search (Student Name/Number, Equipment):" FontSize="11"/>
+                                <TextBox Text="{Binding SearchText}" PlaceholderText="e.g. Juan, S1001, Multimeter..."/>
+                            </StackPanel>
+
+                            <!-- Status Filter -->
+                            <StackPanel Grid.Row="0" Grid.Column="1" Margin="4,0,8,6">
+                                <TextBlock Text="Status Filter:" FontSize="11"/>
+                                <ComboBox SelectedIndex="{Binding SelectedStatusFilter}" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="All"/>
+                                    <ComboBoxItem Content="Active"/>
+                                    <ComboBoxItem Content="Returned"/>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- Sort Field -->
+                            <StackPanel Grid.Row="0" Grid.Column="2" Margin="4,0,8,6">
+                                <TextBlock Text="Sort Field:" FontSize="11"/>
+                                <ComboBox SelectedIndex="{Binding SelectedSortField}" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="Checkout Date"/>
+                                    <ComboBoxItem Content="Expected Return Date"/>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- Sort Direction -->
+                            <StackPanel Grid.Row="0" Grid.Column="3" Margin="4,0,8,6">
+                                <TextBlock Text="Direction:" FontSize="11"/>
+                                <ComboBox SelectedIndex="{Binding IsSortDescending, Converter={x:Null}}" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="Descending"/>
+                                    <ComboBoxItem Content="Ascending"/>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- Buttons -->
+                            <Button Grid.Row="0" Grid.Column="4" Content="Search" Command="{Binding SearchCommand}"
+                                    Background="#3182CE" Foreground="White" FontWeight="Bold" Margin="4,16,4,6" VerticalAlignment="Center"/>
+                            <Button Grid.Row="0" Grid.Column="5" Content="Clear" Command="{Binding ClearCriteriaCommand}"
+                                    Margin="4,16,0,6" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Results List -->
+                    <Border Grid.Row="1" Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="12">
+                        <ListBox ItemsSource="{Binding GlobalResults}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="10,6" Margin="0,2" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                            <!-- Status Badge -->
+                                            <Border Grid.Column="0" Background="#ED8936" CornerRadius="4" Padding="6,2" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Status}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                            </Border>
+
+                                            <!-- Details -->
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock Text="{Binding Student.Name, TargetNullValue='Student'}" FontWeight="Bold"/>
+                                                    <TextBlock Text="{Binding Student.StudentNumber, StringFormat='[{0}]'}" Foreground="#3182CE" FontSize="11"/>
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding Equipment.Name, StringFormat='Item: {0}'}" FontSize="12" Foreground="#4A5568"/>
+                                            </StackPanel>
+
+                                            <!-- Dates -->
+                                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="12,0" HorizontalAlignment="Right">
+                                                <TextBlock Text="{Binding DateBorrowed, StringFormat='Out: {0:MMM dd, yyyy}'}" FontSize="11" Foreground="#718096"/>
+                                                <TextBlock Text="{Binding ExpectedReturnDate, StringFormat='Due: {0:MMM dd, yyyy}'}" FontSize="11" Foreground="#2B6CB0"/>
+                                            </StackPanel>
+
+                                            <!-- Actual Return Date -->
+                                            <Border Grid.Column="3" Background="#F7FAFC" BorderBrush="#CBD5E0" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding ActualReturnDate, TargetNullValue='Not returned yet', StringFormat='Returned: {0:MMM dd, yyyy}'}" FontSize="11" Foreground="#4A5568"/>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+
+                </Grid>
+            </TabItem>
+
+            <!-- Tab 2: Student History (UC-07) -->
+            <TabItem Header="Student History (UC-07)">
+                <Grid RowDefinitions="Auto,*" Margin="0,12,0,0">
+
+                    <!-- Student Selector -->
+                    <Border Grid.Row="0" Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Select Student to view history (Active &amp; Returned records):" FontWeight="SemiBold"/>
+                            <ComboBox ItemsSource="{Binding AllStudents}"
+                                      SelectedItem="{Binding SelectedStudent}"
+                                      PlaceholderText="-- Select Student --"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="{Binding StudentNumber, StringFormat='[{0}]'}" FontWeight="Bold" Foreground="#3182CE"/>
+                                            <TextBlock Text="{Binding Name}"/>
+                                            <TextBlock Text="{Binding ContactInfo, TargetNullValue='No contact'}" FontSize="11" Foreground="#718096"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Student History List -->
+                    <Border Grid.Row="1" Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="12">
+                        <ListBox ItemsSource="{Binding StudentHistory}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="10,6" Margin="0,2" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                            <Border Grid.Column="0" Background="#4A5568" CornerRadius="4" Padding="6,2" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Equipment.EquipmentIdentifier, TargetNullValue='EQ'}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Equipment.Name}" FontWeight="Bold"/>
+                                                <TextBlock Text="{Binding Status, StringFormat='Status: {0}'}" FontSize="11" Foreground="#718096"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="12,0" HorizontalAlignment="Right">
+                                                <TextBlock Text="{Binding DateBorrowed, StringFormat='Checked Out: {0:MMM dd, yyyy}'}" FontSize="11" Foreground="#718096"/>
+                                                <TextBlock Text="{Binding ExpectedReturnDate, StringFormat='Expected Return: {0:MMM dd, yyyy}'}" FontSize="11" Foreground="#2B6CB0"/>
+                                            </StackPanel>
+                                            <Border Grid.Column="3" Background="#F7FAFC" BorderBrush="#CBD5E0" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding ActualReturnDate, TargetNullValue='Active loan', StringFormat='Actual Return: {0:MMM dd, yyyy}'}" FontSize="11" Foreground="#2D3748"/>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+
+                </Grid>
+            </TabItem>
+
+            <!-- Tab 3: Equipment History (UC-08) -->
+            <TabItem Header="Equipment History (UC-08)">
+                <Grid RowDefinitions="Auto,*" Margin="0,12,0,0">
+
+                    <!-- Equipment Selector -->
+                    <Border Grid.Row="0" Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Select Equipment Item to view its complete borrowing history:" FontWeight="SemiBold"/>
+                            <ComboBox ItemsSource="{Binding AllEquipment}"
+                                      SelectedItem="{Binding SelectedEquipment}"
+                                      PlaceholderText="-- Select Equipment --"
+                                      HorizontalAlignment="Stretch">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="{Binding EquipmentIdentifier, StringFormat='[{0}]'}" FontWeight="Bold" Foreground="#4A5568"/>
+                                            <TextBlock Text="{Binding Name}"/>
+                                            <TextBlock Text="{Binding IsAvailable, StringFormat='(Available: {0})'}" FontSize="11" Foreground="#718096"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Equipment History List -->
+                    <Border Grid.Row="1" Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="12">
+                        <ListBox ItemsSource="{Binding EquipmentHistory}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Padding="10,6" Margin="0,2" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                            <Border Grid.Column="0" Background="#3182CE" CornerRadius="4" Padding="6,2" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Student.StudentNumber, TargetNullValue='S0000'}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Student.Name, TargetNullValue='Unknown Student'}" FontWeight="Bold"/>
+                                                <TextBlock Text="{Binding Status, StringFormat='Status: {0}'}" FontSize="11" Foreground="#718096"/>
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="12,0" HorizontalAlignment="Right">
+                                                <TextBlock Text="{Binding DateBorrowed, StringFormat='Checked Out: {0:MMM dd, yyyy}'}" FontSize="11" Foreground="#718096"/>
+                                                <TextBlock Text="{Binding ExpectedReturnDate, StringFormat='Expected Return: {0:MMM dd, yyyy}'}" FontSize="11" Foreground="#2B6CB0"/>
+                                            </StackPanel>
+                                            <Border Grid.Column="3" Background="#F7FAFC" BorderBrush="#CBD5E0" BorderThickness="1" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding ActualReturnDate, TargetNullValue='Active loan', StringFormat='Actual Return: {0:MMM dd, yyyy}'}" FontSize="11" Foreground="#2D3748"/>
+                                            </Border>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Border>
+
+                </Grid>
+            </TabItem>
+
+        </TabControl>
+
+        <!-- Footer / Feedback -->
+        <Border Grid.Row="2" Background="#EDF2F7" Padding="10,6" CornerRadius="4">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <ProgressBar IsIndeterminate="True" Width="20" Height="20" IsVisible="{Binding IsLoading}"/>
+                <TextBlock Text="{Binding StatusMessage}"
+                           VerticalAlignment="Center"
+                           FontWeight="SemiBold"/>
+            </StackPanel>
+        </Border>
+
+    </Grid>
+</UserControl>

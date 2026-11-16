@@ -1,30 +1,72 @@
-﻿<Window xmlns="https://github.com/avaloniaui"
+<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
         x:Class="EquipmentBorrowing.Desktop.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="Campus Equipment Borrowing System"
-        Width="900" Height="600">
+        Title="Campus Equipment Borrowing System - Lab Activity 4 (PostgreSQL)"
+        Width="1050" Height="680"
+        WindowStartupLocation="CenterScreen">
 
-    <Grid ColumnDefinitions="200,*">
+    <Grid ColumnDefinitions="220,*">
 
-        <!-- Sidebar -->
-        <StackPanel Grid.Column="0" Background="#2C3E50" Spacing="4" Margin="0">
-            <TextBlock Text="Campus Equipment"
-                       FontSize="18" FontWeight="Bold"
-                       Foreground="White" Margin="16"/>
-            <Button Content="Equipment"
-                    Command="{Binding ShowEquipmentCommand}"
-                    HorizontalAlignment="Stretch" Margin="8,4"/>
-            <Button Content="Active Borrowings"
-                    Command="{Binding ShowBorrowingsCommand}"
-                    HorizontalAlignment="Stretch" Margin="8,4"/>
-        </StackPanel>
+        <!-- Sidebar Navigation -->
+        <Border Grid.Column="0" Background="#1A202C">
+            <DockPanel LastChildFill="True">
 
-        <!-- Main content area -->
+                <!-- Header -->
+                <StackPanel DockPanel.Dock="Top" Margin="16,20,16,16" Spacing="4">
+                    <TextBlock Text="Campus System" FontSize="18" FontWeight="Bold" Foreground="White"/>
+                    <TextBlock Text="Equipment Borrowing" FontSize="12" Foreground="#A0AEC0"/>
+                    <Border Background="#2D3748" Height="1" Margin="0,12,0,0"/>
+                </StackPanel>
+
+                <!-- Footer (PostgreSQL indicator) -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="16" Spacing="4">
+                    <Border Background="#2D3748" Height="1" Margin="0,0,0,12"/>
+                    <TextBlock Text="Database: PostgreSQL 18" FontSize="11" Foreground="#68D391"/>
+                    <TextBlock Text="ITSD 81 — Lab 4" FontSize="10" Foreground="#718096"/>
+                </StackPanel>
+
+                <!-- Navigation Buttons -->
+                <StackPanel Spacing="6" Margin="12,0">
+                    <Button Content="📦  Equipment"
+                            Command="{Binding ShowEquipmentCommand}"
+                            HorizontalAlignment="Stretch"
+                            Padding="12,10"
+                            Background="#2D3748" Foreground="White"/>
+
+                    <Button Content="👥  Students"
+                            Command="{Binding ShowStudentsCommand}"
+                            HorizontalAlignment="Stretch"
+                            Padding="12,10"
+                            Background="#2D3748" Foreground="White"/>
+
+                    <Button Content="📤  Borrow / Checkout"
+                            Command="{Binding ShowCheckoutCommand}"
+                            HorizontalAlignment="Stretch"
+                            Padding="12,10"
+                            Background="#2D3748" Foreground="White"/>
+
+                    <Button Content="📋  Active Borrowings"
+                            Command="{Binding ShowBorrowingsCommand}"
+                            HorizontalAlignment="Stretch"
+                            Padding="12,10"
+                            Background="#2D3748" Foreground="White"/>
+
+                    <Button Content="🔍  History &amp; Search"
+                            Command="{Binding ShowHistoryCommand}"
+                            HorizontalAlignment="Stretch"
+                            Padding="12,10"
+                            Background="#2D3748" Foreground="White"/>
+                </StackPanel>
+
+            </DockPanel>
+        </Border>
+
+        <!-- Main Content Area -->
         <ContentControl Grid.Column="1"
-                         Content="{Binding CurrentView}"
-                         Margin="16"/>
+                        Content="{Binding CurrentView}"
+                        Margin="16"/>
 
     </Grid>
 </Window>

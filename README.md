@@ -388,3 +388,287 @@ it and makes the query a little faster and lighter.
 Only the Infrastructure project would need new repository classes and a different connection setup
 in App.axaml.cs, since everything else only depends on the repository interfaces and has no idea
 SQLite was ever involved in the first place.
+
+
+---
+
+# Laboratory Activity 4 — Advanced Data-Driven Workflows and PostgreSQL Integration
+
+## 1. Activity Overview & Objectives
+
+In Laboratory Activity 4, the Campus Equipment Borrowing System transitions its operational database from SQLite to **PostgreSQL**, retains its working single-item borrowing and return functions, and is extended with:
+- Persistent Student Management (Registration, Updating, and Eligibility Toggling: Permit / Restrict).
+- Persistent Equipment Management (Registration, Updating, and Availability Protection).
+- Coordinated Atomic Multi-Item Checkout (at least 2 items, limit of 3 active loans, all-or-nothing rollback).
+- Historical Tracking and Retrieval Workflows (Student Borrowing History, Equipment Borrowing History, and Multi-Criteria Borrowing Search, Filtering, and Sorting).
+- Full preservation of clean 4-layer / MVVM architectural boundaries:
+  `Avalonia View` $\rightarrow$ `ViewModel` $\rightarrow$ `Application Service` $\rightarrow$ `Repository Abstraction` $\rightarrow$ `EF Core Infrastructure` $\rightarrow$ `PostgreSQL`.
+
+---
+
+## 2. PostgreSQL Transition & Secret-Free Configuration
+
+### Migration from SQLite to PostgreSQL
+The SQLite EF Core provider was replaced with `Npgsql.EntityFrameworkCore.PostgreSQL` (v10.0.3). All database interactions are now performed against a local or remote PostgreSQL 18 instance.
+
+### Secret-Free Connection Strategy
+To adhere strictly to security policies and prevent committing credentials to Git:
+1. `DatabaseConfiguration.cs` inspects runtime configuration in a secure priority order:
+   - **Environment Variable**: `EQUIPMENT_BORROWING_DB_CONN` or `POSTGRESQL_CONNECTION_STRING`.
+   - **Local Configuration**: `appsettings.json` located beside the executable or solution.
+   - **Development Fallback**: `Host=localhost;Port=5432;Database=equipment_borrowing;Username=postgres;Password=password`.
+2. `appsettings.json` is explicitly gitignored in `.gitignore`.
+3. A sanitized template file `appsettings.json.example` is committed:
+   ```json
+   {
+     "ConnectionStrings": {
+       "EquipmentBorrowingDb": "Host=localhost;Port=5432;Database=equipment_borrowing;Username=postgres;Password=YOUR_PASSWORD_HERE"
+     }
+   }
+   ```
+
+---
+
+## 3. Relational Schema & Database Integrity
+
+PostgreSQL enforces primary keys, foreign keys with restrict delete behavior, required columns, and unique constraints at the relational engine level.
+
+### Entity-Relationship Diagram (PostgreSQL)
+
+```mermaid
+erDiagram
+    STUDENTS ||--o{ BORROWINGS : "places"
+    EQUIPMENT ||--o{ BORROWINGS : "included in"
+
+    STUDENTS {
+        int StudentId PK
+        string StudentNumber UK "Unique, case-insensitive"
+        string Name "Required nonblank"
+        string ContactInfo "Optional, trimmed"
+        bool IsAllowedToBorrow "Default true"
+    }
+
+    EQUIPMENT {
+        int EquipmentId PK
+        string EquipmentIdentifier UK "Unique, case-insensitive"
+        string Name "Required nonblank"
+        string Description "Optional, trimmed"
+        bool IsAvailable "Non-descriptive state"
+    }
+
+    BORROWINGS {
+        int BorrowingId PK
+        int StudentId FK "DeleteBehavior.Restrict"
+        int EquipmentId FK "DeleteBehavior.Restrict"
+        timestamp DateBorrowed "Local calendar checkout"
+        timestamp ExpectedReturnDate "Later than checkout"
+        timestamp ActualReturnDate "Nullable, recorded upon return"
+        int Status "0=Active, 1=Returned"
+    }
+```
+
+### Key Database Constraints Enforced
+1. **Student Number Uniqueness (BR-01, BR-16)**:
+   - `IX_Students_StudentNumber` (`UNIQUE INDEX ("StudentNumber")`).
+2. **Equipment Identifier Uniqueness (BR-05, BR-16)**:
+   - `IX_Equipment_EquipmentIdentifier` (`UNIQUE INDEX ("EquipmentIdentifier")`).
+3. **Single Active Borrowing Constraint (BR-10, BR-16)**:
+   - `IX_Borrowings_EquipmentId_Active`:
+     `CREATE UNIQUE INDEX "IX_Borrowings_EquipmentId_Active" ON "Borrowings" ("EquipmentId") WHERE ("Status" = 0);`
+   - Guarantees at the database level that no equipment item can have more than one concurrent active borrowing.
+4. **Foreign Key Integrity (BR-14)**:
+   - `FK_Borrowings_Students_StudentId` on `Students(StudentId)` with `ON DELETE RESTRICT`.
+   - `FK_Borrowings_Equipment_EquipmentId` on `Equipment(EquipmentId)` with `ON DELETE RESTRICT`.
+
+---
+
+## 4. Use Case Catalog & Scope
+
+| Use Case ID | Use Case Name | Classification | Actor |
+|---|---|---|---|
+| **UC-01** | View Equipment Catalog | Required Continuation | Equipment Custodian |
+| **UC-02** | Find Available Equipment | Required Continuation | Equipment Custodian |
+| **UC-03** | Borrow Equipment (Single Item) | Required Continuation | Equipment Custodian |
+| **UC-04** | View Active Borrowings | Required Continuation | Equipment Custodian |
+| **UC-05** | Return Equipment | Required Continuation | Equipment Custodian |
+| **UC-06** | Check Out Multiple Equipment Items | Required New | Equipment Custodian |
+| **UC-07** | View Student Borrowing History | Required New | Equipment Custodian |
+| **UC-08** | View Equipment Borrowing History | Required New | Equipment Custodian |
+| **UC-09** | Search, Filter, and Sort Borrowings | Required New | Equipment Custodian |
+| **UC-12** | Register Student | Required New | Equipment Custodian |
+| **UC-13** | Update Student Information | Required New | Equipment Custodian |
+| **UC-14** | Change Student Borrowing Eligibility | Required New | Equipment Custodian |
+| **UC-15** | Register Equipment | Required New | Equipment Custodian |
+| **UC-16** | Update Equipment Information | Required New | Equipment Custodian |
+
+```mermaid
+flowchart LR
+    Custodian((Equipment Custodian))
+
+    subgraph Equipment Management
+        UC01["UC-01: View Equipment Catalog"]
+        UC02["UC-02: Find Available Equipment"]
+        UC15["UC-15: Register Equipment"]
+        UC16["UC-16: Update Equipment Information"]
+    end
+
+    subgraph Student Management
+        UC12["UC-12: Register Student"]
+        UC13["UC-13: Update Student Information"]
+        UC14["UC-14: Change Borrowing Eligibility"]
+    end
+
+    subgraph Borrowing & Returns
+        UC03["UC-03: Borrow Equipment (Single)"]
+        UC06["UC-06: Check Out Multiple Items (Atomic)"]
+        UC04["UC-04: View Active Borrowings"]
+        UC05["UC-05: Return Equipment"]
+    end
+
+    subgraph History & Search
+        UC07["UC-07: View Student History"]
+        UC08["UC-08: View Equipment History"]
+        UC09["UC-09: Search, Filter, & Sort Borrowings"]
+    end
+
+    Custodian --> UC01
+    Custodian --> UC02
+    Custodian --> UC15
+    Custodian --> UC16
+    Custodian --> UC12
+    Custodian --> UC13
+    Custodian --> UC14
+    Custodian --> UC03
+    Custodian --> UC06
+    Custodian --> UC04
+    Custodian --> UC05
+    Custodian --> UC07
+    Custodian --> UC08
+    Custodian --> UC09
+```
+
+---
+
+## 5. Architectural & Technical Decisions
+
+### 1. Layer Boundaries
+- **Views**: Avalonia XAML UserControls (`EquipmentView`, `StudentsView`, `CheckoutView`, `BorrowingsView`, `HistoryView`) bind exclusively to ViewModel properties and commands. Zero SQL, zero DB access, zero business logic.
+- **ViewModels**: CommunityToolkit.Mvvm `ObservableObject` classes manage presentation state, trigger asynchronous loading, capture user inputs, and delegate use-case execution to Application Services.
+- **Application Services**: Coordinate business domain rules and repository interfaces (`BorrowEquipmentService`, `ReturnEquipmentService`, `MultiItemBorrowService`, `StudentManagementService`, `EquipmentManagementService`, `BorrowingHistoryService`). They reference only Domain and Application interfaces.
+- **Repository Abstractions**: `IStudentRepository`, `IEquipmentRepository`, `IBorrowingRepository`, `IUnitOfWork`.
+- **Infrastructure**: `EfStudentRepository`, `EfEquipmentRepository`, `EfBorrowingRepository`, `EfUnitOfWork`, `EquipmentBorrowingDbContext`. Encapsulates Npgsql and EF Core database access.
+
+### 2. Dependency Injection & Context Lifetimes
+- `EquipmentBorrowingDbContext` is registered as **Scoped**, matching UI lifecycle sessions.
+- Repositories (`EfStudentRepository`, etc.) and `IUnitOfWork` are registered as **Scoped**, ensuring they share the same DbContext instance during a coordinated transaction.
+- Application Services are registered as **Transient**, executing fresh validation and transactions per operation.
+- ViewModels are registered as **Scoped**, retaining active UI state across navigation transitions.
+
+### 3. Multi-Item Checkout (UC-06) & Transaction Coordination
+- `MultiItemBorrowService` coordinates atomic transactions via the `IUnitOfWork` abstraction:
+  - `await using var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);`
+  - Revalidates student eligibility, 3-item limit (`activeCount + items <= 3`), item availability, and distinct item counts ($\ge 2$) at the transaction boundary (BR-15).
+  - Iterates through all items, writes new `Borrowing` rows, and marks equipment unavailable.
+  - Commits atomically (`await transaction.CommitAsync()`).
+  - Upon any failure or error, `await transaction.RollbackAsync()` is executed, ensuring **zero partial writes** in PostgreSQL.
+  - Includes a controlled failure seam (`simulateFailureAfterFirstWrite`) for verification and demonstration of atomic rollback (A06).
+
+---
+
+## 6. Business Rules Compliance Summary (BR-01 – BR-19)
+
+- **BR-01 & BR-02**: Unique trimmed institutional student number, nonblank full name, optional contact info, default eligible.
+- **BR-03 & BR-04**: Student updates preserve stable ID and history; restriction prevents new loans without cancelling or blocking returns of active loans.
+- **BR-05, BR-06, BR-07**: Unique trimmed equipment identifier, nonblank name, optional description, initially available. Availability is strictly non-descriptive and cannot be edited directly.
+- **BR-08 & BR-09**: Valid eligible student and available equipment required; student active loans cannot exceed 3 items.
+- **BR-10**: Item is borrowable only if available; PostgreSQL partial index enforces max 1 active loan per item.
+- **BR-11**: Expected return date must be strictly later than checkout date.
+- **BR-12**: Multi-item checkout requires $\ge 2$ distinct items; duplicate items are rejected.
+- **BR-13**: Only active loans can be returned; local calendar return date $\ge$ checkout date; repeat return rejected.
+- **BR-14**: Enforced foreign keys with restrict delete; history preserved; no hard deletes.
+- **BR-15**: Transaction-boundary revalidation and atomic all-or-nothing commit.
+- **BR-16**: PostgreSQL-enforced primary keys, foreign keys, unique indexes, and single-active partial index.
+- **BR-17**: Case-insensitive partial search across student name/number and equipment name; filter by active/returned/all; sort with borrowing ID tie-breaker.
+- **BR-18**: Meaningful error messages without exposing credentials; connection failures and rollback handled safely.
+- **BR-19**: Durable persistence in PostgreSQL across application restarts; asynchronous responsive loading.
+
+---
+
+## 7. Acceptance & Traceability Matrix (Appendix C)
+
+| Acceptance ID / UC | Functional Scenario | Verified Behavior & Evidence | Rubric | Status |
+|---|---|---|---|---|
+| **A01 / UC-01** | Open catalog; verify items & availability | Displays all items and states; empty state and error state distinguishable | R1 | **PASS** |
+| **A02 / UC-02** | Filter available equipment | Shows only items with `IsAvailable == true`; excludes borrowed items | R1 | **PASS** |
+| **A03 / UC-03** | Single-item borrow & validation rejections | Rejects ineligible, missing, unavailable, over-limit (>3), and invalid return date ($<$ checkout); valid request persists | R1, R2 | **PASS** |
+| **A04 / UC-04** | View active borrowings | Displays active loans with student and equipment info; excludes returned records | R1 | **PASS** |
+| **A05 / UC-05** | Return active equipment | Marks returned, records actual return date, item available; rejects repeat return | R1, R2 | **PASS** |
+| **A06 / UC-06** | Multi-item checkout & atomic rollback | Rejects $<$2 items, duplicate items, over-limit. Safe failure seam proves rollback leaves 0 partial changes | R3 | **PASS** |
+| **A07 / UC-07** | View student borrowing history | Displays active and returned history per student; students do not mix; handles empty history | R6, R7 | **PASS** |
+| **A08 / UC-08** | View equipment borrowing history | Displays active and returned history per item; items do not mix; handles empty history | R6, R7 | **PASS** |
+| **A09 / UC-09** | Search, filter, and sort | Searches student name/number and equipment name; filters status; sorts with ID tie-breaker; clear reset | R6, R7 | **PASS** |
+| **A12 / UC-12** | Register student | Valid student persists; rejects blank required fields and duplicate student number (case/whitespace) | R4, R2 | **PASS** |
+| **A13 / UC-13** | Update student information | Edits persist on same identity; preserves history; blank contact clears it; rejects duplicates | R4 | **PASS** |
+| **A14 / UC-14** | Change borrowing eligibility | Restriction prevents new loans but allows returning active loans; repeated state feedback | R4 | **PASS** |
+| **A15 / UC-15** | Register equipment | Persists with initial availability; rejects duplicate identifier and blank fields | R5, R2 | **PASS** |
+| **A16 / UC-16** | Update equipment information | Edits persist on same identity; clears description when blank; availability is protected | R5 | **PASS** |
+| **A17 / Cross-cutting** | PostgreSQL database integrity | PostgreSQL rejects FK violations, duplicate student numbers, duplicate identifiers, and second active loans | R2 | **PASS** |
+| **A18 / Cross-cutting** | Controlled persistence failure & recovery | Safe error handling without credentials; restored access works; clean rollback verification | R3, R7, R8 | **PASS** |
+| **A19 / Cross-cutting** | System verification & documentation | Full agreement between schema, use case suite, traceability matrix, and code implementation | R8 | **PASS** |
+
+---
+
+## 8. Verification & Test Evidence
+
+All 25 automated unit and integration tests execute successfully:
+```
+Test run for ...\EquipmentBorrowing.Tests.dll (.NETCoreApp,Version=v10.0)
+Passed!  - Failed: 0, Passed: 25, Skipped: 0, Total: 25, Duration: 3 s
+```
+
+### PostgreSQL Schema Readback Evidence
+- **Table Verification**:
+  ```
+  Schema | Name                  | Type  | Owner
+  public | Borrowings            | table | postgres
+  public | Equipment             | table | postgres
+  public | Students              | table | postgres
+  public | __EFMigrationsHistory | table | postgres
+  ```
+- **Constraint & Index Evidence**:
+  - `IX_Borrowings_EquipmentId_Active` (`UNIQUE INDEX ("EquipmentId") WHERE ("Status" = 0)`)
+  - `IX_Students_StudentNumber` (`UNIQUE INDEX ("StudentNumber")`)
+  - `IX_Equipment_EquipmentIdentifier` (`UNIQUE INDEX ("EquipmentIdentifier")`)
+  - `FK_Borrowings_Students_StudentId` (`FOREIGN KEY (StudentId) REFERENCES Students(StudentId) RESTRICT`)
+  - `FK_Borrowings_Equipment_EquipmentId` (`FOREIGN KEY (EquipmentId) REFERENCES Equipment(EquipmentId) RESTRICT`)
+
+---
+
+## 9. How to Run the Application
+
+### Prerequisites
+- .NET 10 SDK (or compatible .NET SDK)
+- PostgreSQL 18 (running locally on port 5432)
+
+### Steps
+1. **Configure Connection String**:
+   - Copy `src/EquipmentBorrowing.Desktop/appsettings.json.example` to `appsettings.json` (or set environment variable `EQUIPMENT_BORROWING_DB_CONN`):
+     ```json
+     {
+       "ConnectionStrings": {
+         "EquipmentBorrowingDb": "Host=localhost;Port=5432;Database=equipment_borrowing;Username=postgres;Password=password"
+       }
+     }
+     ```
+2. **Apply Migrations** (Automatic on application launch or manual via CLI):
+   ```bash
+   dotnet ef database update --project src/EquipmentBorrowing.Infrastructure --startup-project src/EquipmentBorrowing.Desktop
+   ```
+3. **Execute Desktop Application**:
+   ```bash
+   dotnet run --project src/EquipmentBorrowing.Desktop
+   ```
+4. **Run Verification Test Suite**:
+   ```bash
+   dotnet test
+   ```

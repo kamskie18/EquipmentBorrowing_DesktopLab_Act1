@@ -1,4 +1,4 @@
-﻿using Avalonia;
+using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using EquipmentBorrowing.Application.Interfaces;
@@ -48,21 +48,29 @@ public partial class App : Avalonia.Application
 
     private static void ConfigureServices(ServiceCollection services)
     {
-        var dbPath = Path.Combine(AppContext.BaseDirectory, "equipmentborrowing.db");
+        var connectionString = DatabaseConfiguration.GetConnectionString();
 
         services.AddDbContext<EquipmentBorrowingDbContext>(options =>
-    options.UseSqlite($"Data Source={dbPath}")
-           .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information));
+            options.UseNpgsql(connectionString)
+                   .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information));
 
+        services.AddScoped<IUnitOfWork, EfUnitOfWork>();
         services.AddScoped<IStudentRepository, EfStudentRepository>();
         services.AddScoped<IEquipmentRepository, EfEquipmentRepository>();
         services.AddScoped<IBorrowingRepository, EfBorrowingRepository>();
 
         services.AddTransient<BorrowEquipmentService>();
         services.AddTransient<ReturnEquipmentService>();
+        services.AddTransient<MultiItemBorrowService>();
+        services.AddTransient<StudentManagementService>();
+        services.AddTransient<EquipmentManagementService>();
+        services.AddTransient<BorrowingHistoryService>();
 
         services.AddScoped<EquipmentViewModel>();
+        services.AddScoped<StudentsViewModel>();
+        services.AddScoped<CheckoutViewModel>();
         services.AddScoped<BorrowingsViewModel>();
+        services.AddScoped<HistoryViewModel>();
         services.AddScoped<MainWindowViewModel>();
 
     }
