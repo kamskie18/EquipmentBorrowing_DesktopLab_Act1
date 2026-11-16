@@ -1,0 +1,5 @@
+{
+  "ConnectionStrings": {
+    "EquipmentBorrowingDb": "Host=localhost;Port=5432;Database=equipment_borrowing;Username=postgres;Password=YOUR_PASSWORD_HERE"
+  }
+}

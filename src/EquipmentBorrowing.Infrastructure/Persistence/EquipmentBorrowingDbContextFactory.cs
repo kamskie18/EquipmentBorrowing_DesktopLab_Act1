@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
 namespace EquipmentBorrowing.Infrastructure.Persistence;
@@ -8,7 +8,8 @@ public class EquipmentBorrowingDbContextFactory : IDesignTimeDbContextFactory<Eq
     public EquipmentBorrowingDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<EquipmentBorrowingDbContext>();
-        optionsBuilder.UseSqlite("Data Source=equipmentborrowing.db");
+        var connectionString = DatabaseConfiguration.GetConnectionString();
+        optionsBuilder.UseNpgsql(connectionString);
         return new EquipmentBorrowingDbContext(optionsBuilder.Options);
     }
 }
