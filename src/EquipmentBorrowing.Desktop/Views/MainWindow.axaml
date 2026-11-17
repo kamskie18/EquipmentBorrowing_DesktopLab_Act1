@@ -29,31 +29,31 @@
 
                 <!-- Navigation Buttons -->
                 <StackPanel Spacing="6" Margin="12,0">
-                    <Button Content="📦  Equipment"
+                    <Button Content="Equipment"
                             Command="{Binding ShowEquipmentCommand}"
                             HorizontalAlignment="Stretch"
                             Padding="12,10"
                             Background="#2D3748" Foreground="White"/>
 
-                    <Button Content="👥  Students"
+                    <Button Content="Students"
                             Command="{Binding ShowStudentsCommand}"
                             HorizontalAlignment="Stretch"
                             Padding="12,10"
                             Background="#2D3748" Foreground="White"/>
 
-                    <Button Content="📤  Borrow / Checkout"
+                    <Button Content="Borrow / Checkout"
                             Command="{Binding ShowCheckoutCommand}"
                             HorizontalAlignment="Stretch"
                             Padding="12,10"
                             Background="#2D3748" Foreground="White"/>
 
-                    <Button Content="📋  Active Borrowings"
+                    <Button Content="Active Borrowings"
                             Command="{Binding ShowBorrowingsCommand}"
                             HorizontalAlignment="Stretch"
                             Padding="12,10"
                             Background="#2D3748" Foreground="White"/>
 
-                    <Button Content="🔍  History &amp; Search"
+                    <Button Content="History &amp; Search"
                             Command="{Binding ShowHistoryCommand}"
                             HorizontalAlignment="Stretch"
                             Padding="12,10"
