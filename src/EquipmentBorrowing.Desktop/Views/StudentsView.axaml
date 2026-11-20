@@ -27,8 +27,8 @@
                                             <TextBlock Text="{Binding StudentNumber}" Foreground="White" FontSize="11" FontWeight="Bold"/>
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
-                                            <TextBlock Text="{Binding ContactInfo, TargetNullValue='No contact info'}" FontSize="11" Foreground="#718096"/>
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#2D3748"/>
+                                            <TextBlock Text="{Binding ContactInfo, TargetNullValue='No contact info'}" FontSize="11" Foreground="#4A5568"/>
                                         </StackPanel>
                                         <Border Grid.Column="2"
                                                 Background="{Binding IsAllowedToBorrow, Converter={x:Null}}"
@@ -53,15 +53,15 @@
                             <TextBlock Text="Register New Student (UC-12)" FontWeight="Bold" Foreground="#2B6CB0"/>
                             <Grid ColumnDefinitions="*,*">
                                 <StackPanel Grid.Column="0" Margin="0,0,4,0">
-                                    <TextBlock Text="Student Number:" FontSize="11"/>
+                                    <TextBlock Text="Student Number:" FontSize="11" Foreground="#2D3748"/>
                                     <TextBox Text="{Binding NewStudentNumber}" PlaceholderText="e.g. S1005"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Margin="4,0,0,0">
-                                    <TextBlock Text="Full Name:" FontSize="11"/>
+                                    <TextBlock Text="Full Name:" FontSize="11" Foreground="#2D3748"/>
                                     <TextBox Text="{Binding NewName}" PlaceholderText="e.g. Juan Luna"/>
                                 </StackPanel>
                             </Grid>
-                            <TextBlock Text="Contact Information (Optional):" FontSize="11"/>
+                            <TextBlock Text="Contact Information (Optional):" FontSize="11" Foreground="#2D3748"/>
                             <TextBox Text="{Binding NewContactInfo}" PlaceholderText="e.g. email or phone"/>
                             <Button Content="Register Student" Command="{Binding RegisterStudentCommand}" HorizontalAlignment="Right" Background="#3182CE" Foreground="White"/>
                         </StackPanel>
@@ -73,15 +73,15 @@
                             <TextBlock Text="Edit Selected Student (UC-13)" FontWeight="Bold" Foreground="#2B6CB0"/>
                             <Grid ColumnDefinitions="*,*">
                                 <StackPanel Grid.Column="0" Margin="0,0,4,0">
-                                    <TextBlock Text="Student Number:" FontSize="11"/>
+                                    <TextBlock Text="Student Number:" FontSize="11" Foreground="#2D3748"/>
                                     <TextBox Text="{Binding EditStudentNumber}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Margin="4,0,0,0">
-                                    <TextBlock Text="Full Name:" FontSize="11"/>
+                                    <TextBlock Text="Full Name:" FontSize="11" Foreground="#2D3748"/>
                                     <TextBox Text="{Binding EditName}"/>
                                 </StackPanel>
                             </Grid>
-                            <TextBlock Text="Contact Information:" FontSize="11"/>
+                            <TextBlock Text="Contact Information:" FontSize="11" Foreground="#2D3748"/>
                             <TextBox Text="{Binding EditContactInfo}"/>
                             <Button Content="Save Changes" Command="{Binding UpdateStudentCommand}" HorizontalAlignment="Right"/>
                         </StackPanel>

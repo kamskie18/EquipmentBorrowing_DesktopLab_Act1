@@ -30,8 +30,8 @@
                                             <TextBlock Text="{Binding EquipmentIdentifier}" Foreground="White" FontSize="11" FontWeight="Bold"/>
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}" FontWeight="Bold"/>
-                                            <TextBlock Text="{Binding Description, TargetNullValue='No description'}" FontSize="11" Foreground="#718096" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{Binding Name}" FontWeight="Bold" Foreground="#2D3748"/>
+                                            <TextBlock Text="{Binding Description, TargetNullValue='No description'}" FontSize="11" Foreground="#4A5568" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
                                         <Border Grid.Column="2" CornerRadius="4" Padding="6,2" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding IsAvailable, StringFormat='Available: {0}'}" FontSize="11" FontWeight="SemiBold"/>
@@ -54,15 +54,15 @@
                             <TextBlock Text="Register New Equipment (UC-15)" FontWeight="Bold" Foreground="#2B6CB0"/>
                             <Grid ColumnDefinitions="*,*">
                                 <StackPanel Grid.Column="0" Margin="0,0,4,0">
-                                    <TextBlock Text="Equipment Identifier:" FontSize="11"/>
+                                    <TextBlock Text="Equipment Identifier:" FontSize="11" Foreground="#2D3748"/>
                                     <TextBox Text="{Binding NewIdentifier}" PlaceholderText="e.g. EQ-006"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Margin="4,0,0,0">
-                                    <TextBlock Text="Equipment Name:" FontSize="11"/>
+                                    <TextBlock Text="Equipment Name:" FontSize="11" Foreground="#2D3748"/>
                                     <TextBox Text="{Binding NewName}" PlaceholderText="e.g. Function Generator"/>
                                 </StackPanel>
                             </Grid>
-                            <TextBlock Text="Description / Specifications (Optional):" FontSize="11"/>
+                            <TextBlock Text="Description / Specifications (Optional):" FontSize="11" Foreground="#2D3748"/>
                             <TextBox Text="{Binding NewDescription}" PlaceholderText="e.g. 25MHz arbitrary waveform generator"/>
                             <Button Content="Register Equipment" Command="{Binding RegisterEquipmentCommand}" HorizontalAlignment="Right" Background="#3182CE" Foreground="White"/>
                         </StackPanel>
@@ -72,18 +72,18 @@
                     <Border Background="#F8F9FA" BorderBrush="#E0E0E0" BorderThickness="1" CornerRadius="6" Padding="12">
                         <StackPanel Spacing="8">
                             <TextBlock Text="Edit Selected Equipment (UC-16)" FontWeight="Bold" Foreground="#2B6CB0"/>
-                            <TextBlock Text="Note: Availability status is managed exclusively via borrow/return workflows." FontSize="11" Foreground="#718096"/>
+                            <TextBlock Text="Note: Availability status is managed exclusively via borrow/return workflows." FontSize="11" Foreground="#4A5568"/>
                             <Grid ColumnDefinitions="*,*">
                                 <StackPanel Grid.Column="0" Margin="0,0,4,0">
-                                    <TextBlock Text="Equipment Identifier:" FontSize="11"/>
+                                    <TextBlock Text="Equipment Identifier:" FontSize="11" Foreground="#2D3748"/>
                                     <TextBox Text="{Binding EditIdentifier}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Margin="4,0,0,0">
-                                    <TextBlock Text="Equipment Name:" FontSize="11"/>
+                                    <TextBlock Text="Equipment Name:" FontSize="11" Foreground="#2D3748"/>
                                     <TextBox Text="{Binding EditName}"/>
                                 </StackPanel>
                             </Grid>
-                            <TextBlock Text="Description / Specifications:" FontSize="11"/>
+                            <TextBlock Text="Description / Specifications:" FontSize="11" Foreground="#2D3748"/>
                             <TextBox Text="{Binding EditDescription}"/>
                             <Button Content="Save Changes" Command="{Binding UpdateEquipmentCommand}" HorizontalAlignment="Right"/>
                         </StackPanel>

@@ -28,10 +28,10 @@
                                                 <Border Background="#4A5568" CornerRadius="4" Padding="6,2">
                                                     <TextBlock Text="{Binding Equipment.EquipmentIdentifier, TargetNullValue='Unknown'}" Foreground="White" FontSize="11" FontWeight="Bold"/>
                                                 </Border>
-                                                <TextBlock Text="{Binding Equipment.Name, TargetNullValue='Equipment'}" FontWeight="Bold"/>
+                                                <TextBlock Text="{Binding Equipment.Name, TargetNullValue='Equipment'}" FontWeight="Bold" Foreground="#2D3748"/>
                                             </StackPanel>
                                             <TextBlock Text="{Binding Student.Name, StringFormat='Borrower: {0}'}" FontSize="12" Foreground="#2D3748"/>
-                                            <TextBlock Text="{Binding DateBorrowed, StringFormat='Checked out: {0:MMM dd, yyyy}'}" FontSize="11" Foreground="#718096"/>
+                                            <TextBlock Text="{Binding DateBorrowed, StringFormat='Checked out: {0:MMM dd, yyyy}'}" FontSize="11" Foreground="#4A5568"/>
                                         </StackPanel>
                                         <Border Grid.Column="1" Background="#EBF8FF" CornerRadius="4" Padding="6,4" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding ExpectedReturnDate, StringFormat='Due: {0:MMM dd, yyyy}'}" FontSize="11" FontWeight="Bold" Foreground="#2B6CB0"/>
@@ -50,14 +50,14 @@
                     <TextBlock Text="Return Equipment (UC-05)" FontWeight="Bold" Foreground="#2B6CB0"/>
 
                     <TextBlock Text="Select an active borrowing record on the left to proceed with return."
-                               FontSize="12" Foreground="#718096" TextWrapping="Wrap"/>
+                               FontSize="12" Foreground="#4A5568" TextWrapping="Wrap"/>
 
                     <Border Background="#EDF2F7" CornerRadius="4" Padding="10">
                         <StackPanel Spacing="6">
-                            <TextBlock Text="Selected Loan Summary:" FontWeight="SemiBold" FontSize="12"/>
-                            <TextBlock Text="{Binding SelectedBorrowing.Equipment.Name, TargetNullValue='None selected', StringFormat='Item: {0}'}" FontSize="12"/>
-                            <TextBlock Text="{Binding SelectedBorrowing.Student.Name, TargetNullValue='-', StringFormat='Borrower: {0}'}" FontSize="12"/>
-                            <TextBlock Text="{Binding SelectedBorrowing.ExpectedReturnDate, TargetNullValue='-', StringFormat='Due: {0:MMM dd, yyyy}'}" FontSize="12"/>
+                            <TextBlock Text="Selected Loan Summary:" FontWeight="SemiBold" FontSize="12" Foreground="#2D3748"/>
+                            <TextBlock Text="{Binding SelectedBorrowing.Equipment.Name, TargetNullValue='None selected', StringFormat='Item: {0}'}" FontSize="12" Foreground="#2D3748"/>
+                            <TextBlock Text="{Binding SelectedBorrowing.Student.Name, TargetNullValue='-', StringFormat='Borrower: {0}'}" FontSize="12" Foreground="#2D3748"/>
+                            <TextBlock Text="{Binding SelectedBorrowing.ExpectedReturnDate, TargetNullValue='-', StringFormat='Due: {0:MMM dd, yyyy}'}" FontSize="12" Foreground="#2D3748"/>
                         </StackPanel>
                     </Border>
 
@@ -68,7 +68,7 @@
                             HorizontalContentAlignment="Center"/>
 
                     <TextBlock Text="* Returning marks the item available, sets the actual return date to today, preserves borrowing history, and blocks repeat returns (BR-13)."
-                               FontSize="11" Foreground="#718096" TextWrapping="Wrap"/>
+                               FontSize="11" Foreground="#4A5568" TextWrapping="Wrap"/>
                 </StackPanel>
             </Border>
         </Grid>

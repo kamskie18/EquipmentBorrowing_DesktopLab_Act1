@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="using:EquipmentBorrowing.Desktop"
              x:Class="EquipmentBorrowing.Desktop.App"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Light">
 
     <Application.DataTemplates>
         <local:ViewLocator />
@@ -10,6 +10,11 @@
 
    <Application.Styles>
     <FluentTheme />
+
+    <!-- Ensure high-contrast readable dark text for all textblocks by default -->
+    <Style Selector="TextBlock">
+        <Setter Property="Foreground" Value="#2D3748"/>
+    </Style>
 
     <Style Selector="Button">
         <Setter Property="Padding" Value="12,6"/>
