@@ -668,7 +668,41 @@ Passed!  - Failed: 0, Passed: 25, Skipped: 0, Total: 25, Duration: 3 s
    ```bash
    dotnet run --project src/EquipmentBorrowing.Desktop
    ```
-4. **Run Verification Test Suite**:
+---
+
+## 10. Laboratory Activity 5: REST API & Distributed Architecture
+
+Laboratory Activity 5 evolves the Campus Equipment Borrowing System into a distributed multi-tier system with an ASP.NET Core REST API, OpenAPI 3.0 contract catalog, and a decoupled Avalonia HTTP client.
+
+### Architectural Evolution
+- **Web API Layer (`EquipmentBorrowing.Api`)**: Hosts API-01 through API-16 with OpenAPI/Scalar endpoints and isolates all EF Core, DbContext, and PostgreSQL transactions.
+- **Client Layer (`EquipmentBorrowing.Desktop`)**: Uses `IEquipmentBorrowingApiClient` (`HttpClient`) with asynchronous requests, real-time UI state synchronization, and robust error detection distinguishing connection failures from HTTP 500 server errors.
+- **Shared Contracts (`EquipmentBorrowing.Application.Models.ApiContracts`)**: Standardized DTOs, `YYYY-MM-DD` date serialization, and `{ "code": "...", "message": "..." }` error envelopes.
+
+### Running the System
+1. **Start the API Host**:
+   ```bash
+   dotnet run --project src/EquipmentBorrowing.Api
+   ```
+   - API Root: `http://localhost:5000`
+   - Interactive Scalar API Docs: `http://localhost:5000/scalar/v1`
+   - OpenAPI Specification: `http://localhost:5000/openapi/v1.json`
+
+2. **Reset to Section 3 Controlled Test Dataset (S1–S4, E1–E7)**:
+   ```bash
+   curl -X POST http://localhost:5000/api/v1/dev/seed
+   ```
+
+3. **Launch the Avalonia Desktop App**:
+   ```bash
+   dotnet run --project src/EquipmentBorrowing.Desktop
+   ```
+   *(Configure API URL via `API_BASE_URL` environment variable if not running on default `http://localhost:5000`)*
+
+4. **Run Acceptance & Unit Test Suite**:
    ```bash
    dotnet test
    ```
+   *(30 total tests passing across domain, application services, and API client contracts)*
+
+For detailed endpoint contracts, traceability matrices, and T01–T08 execution records, see [Lab5-Traceability-And-Verification.md](Lab5-Traceability-And-Verification.md).
