@@ -1,4 +1,4 @@
-using EquipmentBorrowing.Api.Models;
+using EquipmentBorrowing.Application.Models;
 using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Domain;
 using Microsoft.AspNetCore.Mvc;

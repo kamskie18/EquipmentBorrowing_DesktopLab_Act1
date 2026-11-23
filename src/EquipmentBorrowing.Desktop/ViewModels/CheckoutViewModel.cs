@@ -5,8 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using EquipmentBorrowing.Application.Interfaces;
-using EquipmentBorrowing.Application.Services;
+using EquipmentBorrowing.Desktop.Services;
 using EquipmentBorrowing.Domain;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
@@ -26,10 +25,7 @@ public partial class EquipmentSelectionItem : ObservableObject
 
 public partial class CheckoutViewModel : ObservableObject
 {
-    private readonly IStudentRepository _studentRepository;
-    private readonly IEquipmentRepository _equipmentRepository;
-    private readonly BorrowEquipmentService _borrowSingleService;
-    private readonly MultiItemBorrowService _multiBorrowService;
+    private readonly IEquipmentBorrowingApiClient _apiClient;
 
     [ObservableProperty]
     private ObservableCollection<Student> students = new();
@@ -55,16 +51,9 @@ public partial class CheckoutViewModel : ObservableObject
     [ObservableProperty]
     private bool isLoading;
 
-    public CheckoutViewModel(
-        IStudentRepository studentRepository,
-        IEquipmentRepository equipmentRepository,
-        BorrowEquipmentService borrowSingleService,
-        MultiItemBorrowService multiBorrowService)
+    public CheckoutViewModel(IEquipmentBorrowingApiClient apiClient)
     {
-        _studentRepository = studentRepository;
-        _equipmentRepository = equipmentRepository;
-        _borrowSingleService = borrowSingleService;
-        _multiBorrowService = multiBorrowService;
+        _apiClient = apiClient;
     }
 
     [RelayCommand]
@@ -74,12 +63,23 @@ public partial class CheckoutViewModel : ObservableObject
         StatusMessage = null;
         try
         {
-            var studentList = await _studentRepository.GetAllAsync();
+            var studentDtos = await _apiClient.GetStudentsAsync();
+            var studentList = studentDtos.Select(s => new Student(s.Id, s.StudentNumber, s.FullName, s.Contact, s.IsEligible));
             Students = new ObservableCollection<Student>(studentList);
 
-            var equipList = await _equipmentRepository.GetAvailableAsync();
+            var equipDtos = await _apiClient.GetEquipmentAsync(availableOnly: true);
+            var equipList = equipDtos.Select(e => new Equipment(e.Id, e.EquipmentCode, e.Name, e.Description, e.IsAvailable));
             AvailableEquipment = new ObservableCollection<EquipmentSelectionItem>(
                 equipList.Select(e => new EquipmentSelectionItem(e)));
+        }
+        catch (ApiException ex)
+        {
+            IsError = true;
+            StatusMessage = ex.IsConnectionFailure
+                ? "Connection Error: API server is unreachable. Please verify http://localhost:5000 is running."
+                : ex.IsServerError
+                    ? "Server Error (500): The API encountered an internal server error."
+                    : $"Error ({ex.StatusCode}): {ex.Message}";
         }
         catch (Exception ex)
         {
@@ -113,21 +113,29 @@ public partial class CheckoutViewModel : ObservableObject
             return;
         }
 
-        var result = await _borrowSingleService.BorrowAsync(
-            SelectedStudent.Id,
-            selectedItems[0].Equipment.Id,
-            ExpectedReturnDate.DateTime);
-
-        if (result.IsSuccess)
+        try
         {
-            StatusMessage = $"Single item '{selectedItems[0].Equipment.Name}' borrowed successfully. Due: {result.Borrowing!.ExpectedReturnDate:MMM dd, yyyy}.";
+            var dateStr = ExpectedReturnDate.DateTime.ToString("yyyy-MM-dd");
+            var result = await _apiClient.BorrowEquipmentAsync(
+                SelectedStudent.Id,
+                selectedItems[0].Equipment.Id,
+                dateStr);
+
+            StatusMessage = $"Single item '{selectedItems[0].Equipment.Name}' borrowed successfully. Due: {result.ExpectedReturnDate}.";
             IsError = false;
             await LoadAsync();
         }
-        else
+        catch (ApiException ex)
         {
-            StatusMessage = result.ErrorMessage;
             IsError = true;
+            StatusMessage = ex.IsConnectionFailure
+                ? "Connection Error: Unable to reach the API server."
+                : ex.Message;
+        }
+        catch (Exception ex)
+        {
+            IsError = true;
+            StatusMessage = $"Borrow failed: {ex.Message}";
         }
     }
 
@@ -156,23 +164,30 @@ public partial class CheckoutViewModel : ObservableObject
             return;
         }
 
-        var result = await _multiBorrowService.CheckOutMultipleAsync(
-            SelectedStudent.Id,
-            selectedIds,
-            ExpectedReturnDate.DateTime,
-            simulateFailureAfterFirstWrite: SimulateFailureSeam);
-
-        if (result.IsSuccess)
+        try
         {
-            StatusMessage = result.FeedbackMessage;
+            var dateStr = ExpectedReturnDate.DateTime.ToString("yyyy-MM-dd");
+            var result = await _apiClient.CheckoutMultipleAsync(
+                SelectedStudent.Id,
+                selectedIds,
+                dateStr);
+
+            StatusMessage = $"Successfully checked out {result.Borrowings.Count} items to {SelectedStudent.Name}. Due: {dateStr}.";
             IsError = false;
             await LoadAsync();
         }
-        else
+        catch (ApiException ex)
         {
-            StatusMessage = result.ErrorMessage;
             IsError = true;
-            // Reload to prove no partial state changed
+            StatusMessage = ex.IsConnectionFailure
+                ? "Connection Error: Unable to reach the API server."
+                : ex.Message;
+            await LoadAsync(); // Reload to show atomic rollback / fresh availability
+        }
+        catch (Exception ex)
+        {
+            IsError = true;
+            StatusMessage = $"Checkout failed: {ex.Message}";
             await LoadAsync();
         }
     }

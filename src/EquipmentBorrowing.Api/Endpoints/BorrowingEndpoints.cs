@@ -1,5 +1,5 @@
 using System.Globalization;
-using EquipmentBorrowing.Api.Models;
+using EquipmentBorrowing.Application.Models;
 using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Application.Models;
 using EquipmentBorrowing.Application.Services;

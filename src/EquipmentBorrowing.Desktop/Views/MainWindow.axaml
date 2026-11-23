@@ -23,8 +23,8 @@
                 <!-- Footer (PostgreSQL indicator) -->
                 <StackPanel DockPanel.Dock="Bottom" Margin="16" Spacing="4">
                     <Border Background="#2D3748" Height="1" Margin="0,0,0,12"/>
-                    <TextBlock Text="Database: PostgreSQL 18" FontSize="11" Foreground="#68D391"/>
-                    <TextBlock Text="ITSD 81 — Lab 4" FontSize="10" Foreground="#718096"/>
+                    <TextBlock Text="API: http://localhost:5000" FontSize="11" Foreground="#68D391"/>
+                    <TextBlock Text="ITSD 81 — Lab 5 (API Client)" FontSize="10" Foreground="#718096"/>
                 </StackPanel>
 
                 <!-- Navigation Buttons -->

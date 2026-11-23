@@ -4,16 +4,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using EquipmentBorrowing.Application.Interfaces;
-using EquipmentBorrowing.Application.Services;
+using EquipmentBorrowing.Desktop.Services;
 using EquipmentBorrowing.Domain;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
 public partial class EquipmentViewModel : ObservableObject
 {
-    private readonly IEquipmentRepository _equipmentRepository;
-    private readonly EquipmentManagementService _equipmentService;
+    private readonly IEquipmentBorrowingApiClient _apiClient;
 
     [ObservableProperty]
     private ObservableCollection<Equipment> equipmentList = new();
@@ -54,12 +52,9 @@ public partial class EquipmentViewModel : ObservableObject
     [ObservableProperty]
     private bool isLoading;
 
-    public EquipmentViewModel(
-        IEquipmentRepository equipmentRepository,
-        EquipmentManagementService equipmentService)
+    public EquipmentViewModel(IEquipmentBorrowingApiClient apiClient)
     {
-        _equipmentRepository = equipmentRepository;
-        _equipmentService = equipmentService;
+        _apiClient = apiClient;
     }
 
     partial void OnShowAvailableOnlyChanged(bool value)
@@ -90,16 +85,23 @@ public partial class EquipmentViewModel : ObservableObject
         StatusMessage = null;
         try
         {
-            var items = ShowAvailableOnly
-                ? await _equipmentRepository.GetAvailableAsync()
-                : await _equipmentRepository.GetAllAsync();
-
-            EquipmentList = new ObservableCollection<Equipment>(items);
+            var dtos = await _apiClient.GetEquipmentAsync(ShowAvailableOnly ? true : null);
+            var domainList = dtos.Select(d => new Equipment(d.Id, d.EquipmentCode, d.Name, d.Description, d.IsAvailable));
+            EquipmentList = new ObservableCollection<Equipment>(domainList);
+        }
+        catch (ApiException ex)
+        {
+            IsError = true;
+            StatusMessage = ex.IsConnectionFailure
+                ? "Connection Error: API server is unreachable. Please verify http://localhost:5000 is running."
+                : ex.IsServerError
+                    ? "Server Error (500): The API encountered an internal server error."
+                    : $"Error ({ex.StatusCode}): {ex.Message}";
         }
         catch (Exception ex)
         {
             IsError = true;
-            StatusMessage = $"Failed to load equipment catalog: {ex.Message}";
+            StatusMessage = $"Unexpected error: {ex.Message}";
         }
         finally
         {
@@ -113,20 +115,27 @@ public partial class EquipmentViewModel : ObservableObject
         StatusMessage = null;
         IsError = false;
 
-        var result = await _equipmentService.RegisterEquipmentAsync(NewIdentifier, NewName, NewDescription);
-        if (result.IsSuccess)
+        try
         {
-            StatusMessage = result.FeedbackMessage;
+            var res = await _apiClient.RegisterEquipmentAsync(NewIdentifier, NewName, NewDescription);
+            StatusMessage = $"Equipment '{res.Name}' ({res.EquipmentCode}) registered successfully.";
             IsError = false;
             NewIdentifier = string.Empty;
             NewName = string.Empty;
             NewDescription = string.Empty;
             await LoadAsync();
         }
-        else
+        catch (ApiException ex)
         {
-            StatusMessage = result.ErrorMessage;
             IsError = true;
+            StatusMessage = ex.IsConnectionFailure
+                ? "Connection Error: Unable to reach the API server."
+                : ex.Message;
+        }
+        catch (Exception ex)
+        {
+            IsError = true;
+            StatusMessage = $"Unexpected error: {ex.Message}";
         }
     }
 
@@ -143,22 +152,29 @@ public partial class EquipmentViewModel : ObservableObject
             return;
         }
 
-        var result = await _equipmentService.UpdateEquipmentAsync(
-            SelectedEquipment.Id,
-            EditIdentifier,
-            EditName,
-            EditDescription);
-
-        if (result.IsSuccess)
+        try
         {
-            StatusMessage = result.FeedbackMessage;
+            var res = await _apiClient.UpdateEquipmentAsync(
+                SelectedEquipment.Id,
+                EditIdentifier,
+                EditName,
+                EditDescription);
+
+            StatusMessage = $"Equipment '{res.Name}' updated successfully.";
             IsError = false;
             await LoadAsync();
         }
-        else
+        catch (ApiException ex)
         {
-            StatusMessage = result.ErrorMessage;
             IsError = true;
+            StatusMessage = ex.IsConnectionFailure
+                ? "Connection Error: Unable to reach the API server."
+                : ex.Message;
+        }
+        catch (Exception ex)
+        {
+            IsError = true;
+            StatusMessage = $"Unexpected error: {ex.Message}";
         }
     }
 }

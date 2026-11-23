@@ -1,18 +1,17 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using EquipmentBorrowing.Application.Interfaces;
-using EquipmentBorrowing.Application.Services;
+using EquipmentBorrowing.Desktop.Services;
 using EquipmentBorrowing.Domain;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
 public partial class StudentsViewModel : ObservableObject
 {
-    private readonly IStudentRepository _studentRepository;
-    private readonly StudentManagementService _studentService;
+    private readonly IEquipmentBorrowingApiClient _apiClient;
 
     [ObservableProperty]
     private ObservableCollection<Student> students = new();
@@ -50,10 +49,9 @@ public partial class StudentsViewModel : ObservableObject
     [ObservableProperty]
     private bool isLoading;
 
-    public StudentsViewModel(IStudentRepository studentRepository, StudentManagementService studentService)
+    public StudentsViewModel(IEquipmentBorrowingApiClient apiClient)
     {
-        _studentRepository = studentRepository;
-        _studentService = studentService;
+        _apiClient = apiClient;
     }
 
     partial void OnSelectedStudentChanged(Student? value)
@@ -79,13 +77,23 @@ public partial class StudentsViewModel : ObservableObject
         StatusMessage = null;
         try
         {
-            var list = await _studentRepository.GetAllAsync();
-            Students = new ObservableCollection<Student>(list);
+            var dtos = await _apiClient.GetStudentsAsync();
+            var domainList = dtos.Select(d => new Student(d.Id, d.StudentNumber, d.FullName, d.Contact, d.IsEligible));
+            Students = new ObservableCollection<Student>(domainList);
+        }
+        catch (ApiException ex)
+        {
+            IsError = true;
+            StatusMessage = ex.IsConnectionFailure
+                ? "Connection Error: API server is unreachable. Please verify http://localhost:5000 is running."
+                : ex.IsServerError
+                    ? "Server Error (500): The API encountered an internal server error."
+                    : $"Error ({ex.StatusCode}): {ex.Message}";
         }
         catch (Exception ex)
         {
             IsError = true;
-            StatusMessage = $"Failed to load students: {ex.Message}";
+            StatusMessage = $"Unexpected error: {ex.Message}";
         }
         finally
         {
@@ -99,20 +107,27 @@ public partial class StudentsViewModel : ObservableObject
         StatusMessage = null;
         IsError = false;
 
-        var result = await _studentService.RegisterStudentAsync(NewStudentNumber, NewName, NewContactInfo);
-        if (result.IsSuccess)
+        try
         {
-            StatusMessage = result.FeedbackMessage;
+            var res = await _apiClient.RegisterStudentAsync(NewStudentNumber, NewName, NewContactInfo);
+            StatusMessage = $"Student '{res.FullName}' ({res.StudentNumber}) registered successfully.";
             IsError = false;
             NewStudentNumber = string.Empty;
             NewName = string.Empty;
             NewContactInfo = string.Empty;
             await LoadAsync();
         }
-        else
+        catch (ApiException ex)
         {
-            StatusMessage = result.ErrorMessage;
             IsError = true;
+            StatusMessage = ex.IsConnectionFailure
+                ? "Connection Error: Unable to reach the API server."
+                : ex.Message;
+        }
+        catch (Exception ex)
+        {
+            IsError = true;
+            StatusMessage = $"Unexpected error: {ex.Message}";
         }
     }
 
@@ -129,22 +144,29 @@ public partial class StudentsViewModel : ObservableObject
             return;
         }
 
-        var result = await _studentService.UpdateStudentAsync(
-            SelectedStudent.Id,
-            EditStudentNumber,
-            EditName,
-            EditContactInfo);
-
-        if (result.IsSuccess)
+        try
         {
-            StatusMessage = result.FeedbackMessage;
+            var res = await _apiClient.UpdateStudentAsync(
+                SelectedStudent.Id,
+                EditStudentNumber,
+                EditName,
+                EditContactInfo);
+
+            StatusMessage = $"Student '{res.FullName}' updated successfully.";
             IsError = false;
             await LoadAsync();
         }
-        else
+        catch (ApiException ex)
         {
-            StatusMessage = result.ErrorMessage;
             IsError = true;
+            StatusMessage = ex.IsConnectionFailure
+                ? "Connection Error: Unable to reach the API server."
+                : ex.Message;
+        }
+        catch (Exception ex)
+        {
+            IsError = true;
+            StatusMessage = $"Unexpected error: {ex.Message}";
         }
     }
 
@@ -172,17 +194,26 @@ public partial class StudentsViewModel : ObservableObject
             return;
         }
 
-        var result = await _studentService.ChangeEligibilityAsync(SelectedStudent.Id, permit);
-        if (result.IsSuccess)
+        try
         {
-            StatusMessage = result.FeedbackMessage;
+            var res = await _apiClient.UpdateStudentEligibilityAsync(SelectedStudent.Id, permit);
+            StatusMessage = permit
+                ? $"Student '{res.FullName}' is now permitted to borrow equipment."
+                : $"Student '{res.FullName}' is now restricted from borrowing equipment.";
             IsError = false;
             await LoadAsync();
         }
-        else
+        catch (ApiException ex)
         {
-            StatusMessage = result.ErrorMessage;
             IsError = true;
+            StatusMessage = ex.IsConnectionFailure
+                ? "Connection Error: Unable to reach the API server."
+                : ex.Message;
+        }
+        catch (Exception ex)
+        {
+            IsError = true;
+            StatusMessage = $"Unexpected error: {ex.Message}";
         }
     }
 }

@@ -1,16 +1,12 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using EquipmentBorrowing.Application.Interfaces;
-using EquipmentBorrowing.Application.Services;
+using EquipmentBorrowing.Desktop.Services;
 using EquipmentBorrowing.Desktop.ViewModels;
 using EquipmentBorrowing.Desktop.Views;
-using EquipmentBorrowing.Infrastructure.Persistence;
-using EquipmentBorrowing.Infrastructure.Repositories;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System.IO;
 using System;
+using System.Net.Http;
 
 namespace EquipmentBorrowing.Desktop;
 
@@ -26,12 +22,6 @@ public partial class App : Avalonia.Application
         var services = new ServiceCollection();
         ConfigureServices(services);
         var provider = services.BuildServiceProvider();
-        using (var scope = provider.CreateScope())
-        {
-            var dbContext = scope.ServiceProvider.GetRequiredService<EquipmentBorrowingDbContext>();
-            dbContext.Database.Migrate();
-            DbSeeder.Seed(dbContext);
-        }
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
@@ -48,31 +38,27 @@ public partial class App : Avalonia.Application
 
     private static void ConfigureServices(ServiceCollection services)
     {
-        var connectionString = DatabaseConfiguration.GetConnectionString();
+        // Configure API Client (HTTP only, no direct database or SQL in desktop app)
+        var apiBaseUrl = Environment.GetEnvironmentVariable("API_BASE_URL") ?? "http://localhost:5000";
 
-        services.AddDbContext<EquipmentBorrowingDbContext>(options =>
-            options.UseNpgsql(connectionString)
-                   .LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information));
+        services.AddSingleton<HttpClient>(sp =>
+        {
+            var client = new HttpClient
+            {
+                BaseAddress = new Uri(apiBaseUrl),
+                Timeout = TimeSpan.FromSeconds(10)
+            };
+            return client;
+        });
 
-        services.AddScoped<IUnitOfWork, EfUnitOfWork>();
-        services.AddScoped<IStudentRepository, EfStudentRepository>();
-        services.AddScoped<IEquipmentRepository, EfEquipmentRepository>();
-        services.AddScoped<IBorrowingRepository, EfBorrowingRepository>();
+        services.AddSingleton<IEquipmentBorrowingApiClient, EquipmentBorrowingApiClient>();
 
-        services.AddTransient<BorrowEquipmentService>();
-        services.AddTransient<ReturnEquipmentService>();
-        services.AddTransient<MultiItemBorrowService>();
-        services.AddTransient<StudentManagementService>();
-        services.AddTransient<EquipmentManagementService>();
-        services.AddTransient<BorrowingHistoryService>();
-
-        services.AddScoped<EquipmentViewModel>();
-        services.AddScoped<StudentsViewModel>();
-        services.AddScoped<CheckoutViewModel>();
-        services.AddScoped<BorrowingsViewModel>();
-        services.AddScoped<HistoryViewModel>();
-        services.AddScoped<MainWindowViewModel>();
-
+        // Register ViewModels (Singleton for rock-solid UI state persistence across navigation)
+        services.AddSingleton<EquipmentViewModel>();
+        services.AddSingleton<StudentsViewModel>();
+        services.AddSingleton<CheckoutViewModel>();
+        services.AddSingleton<BorrowingsViewModel>();
+        services.AddSingleton<HistoryViewModel>();
+        services.AddSingleton<MainWindowViewModel>();
     }
-
 }

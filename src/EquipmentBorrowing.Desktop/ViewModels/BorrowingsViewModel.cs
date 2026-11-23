@@ -1,18 +1,17 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using EquipmentBorrowing.Application.Interfaces;
-using EquipmentBorrowing.Application.Services;
+using EquipmentBorrowing.Desktop.Services;
 using EquipmentBorrowing.Domain;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
 public partial class BorrowingsViewModel : ObservableObject
 {
-    private readonly IBorrowingRepository _borrowingRepository;
-    private readonly ReturnEquipmentService _returnEquipmentService;
+    private readonly IEquipmentBorrowingApiClient _apiClient;
 
     [ObservableProperty]
     private ObservableCollection<Borrowing> activeBorrowings = new();
@@ -29,10 +28,9 @@ public partial class BorrowingsViewModel : ObservableObject
     [ObservableProperty]
     private bool isLoading;
 
-    public BorrowingsViewModel(IBorrowingRepository borrowingRepository, ReturnEquipmentService returnEquipmentService)
+    public BorrowingsViewModel(IEquipmentBorrowingApiClient apiClient)
     {
-        _borrowingRepository = borrowingRepository;
-        _returnEquipmentService = returnEquipmentService;
+        _apiClient = apiClient;
     }
 
     [RelayCommand]
@@ -42,8 +40,38 @@ public partial class BorrowingsViewModel : ObservableObject
         StatusMessage = null;
         try
         {
-            var borrowings = await _borrowingRepository.GetActiveAsync();
-            ActiveBorrowings = new ObservableCollection<Borrowing>(borrowings);
+            var dtos = await _apiClient.GetBorrowingsAsync(status: "Active");
+            var domainList = dtos.Select(d =>
+            {
+                var b = new Borrowing(
+                    d.Id,
+                    d.StudentId,
+                    d.EquipmentId,
+                    DateTime.Parse(d.BorrowedDate),
+                    DateTime.Parse(d.ExpectedReturnDate)
+                );
+                // attach shallow student/equipment for UI data binding
+                if (!string.IsNullOrEmpty(d.StudentName))
+                {
+                    typeof(Borrowing).GetProperty("Student")?.SetValue(b, new Student(d.StudentId, d.StudentNumber ?? "", d.StudentName, null, true));
+                }
+                if (!string.IsNullOrEmpty(d.EquipmentName))
+                {
+                    typeof(Borrowing).GetProperty("Equipment")?.SetValue(b, new Equipment(d.EquipmentId, d.EquipmentCode ?? "", d.EquipmentName, null, false));
+                }
+                return b;
+            });
+
+            ActiveBorrowings = new ObservableCollection<Borrowing>(domainList);
+        }
+        catch (ApiException ex)
+        {
+            IsError = true;
+            StatusMessage = ex.IsConnectionFailure
+                ? "Connection Error: API server is unreachable. Please verify http://localhost:5000 is running."
+                : ex.IsServerError
+                    ? "Server Error (500): The API encountered an internal server error."
+                    : $"Error ({ex.StatusCode}): {ex.Message}";
         }
         catch (Exception ex)
         {
@@ -64,23 +92,29 @@ public partial class BorrowingsViewModel : ObservableObject
 
         if (SelectedBorrowing is null)
         {
-            StatusMessage = "Please select a borrowing to return.";
+            StatusMessage = "Please select an active borrowing to return.";
             IsError = true;
             return;
         }
 
-        var result = await _returnEquipmentService.ReturnAsync(SelectedBorrowing.Id, DateTime.Now);
-
-        if (result.IsSuccess)
+        try
         {
-            StatusMessage = "Equipment returned successfully. History retained and equipment is available.";
+            var res = await _apiClient.ReturnBorrowingAsync(SelectedBorrowing.Id);
+            StatusMessage = $"Equipment return confirmed successfully. Item is now available.";
             IsError = false;
             await LoadAsync();
         }
-        else
+        catch (ApiException ex)
         {
-            StatusMessage = result.ErrorMessage;
             IsError = true;
+            StatusMessage = ex.IsConnectionFailure
+                ? "Connection Error: Unable to reach the API server."
+                : ex.Message;
+        }
+        catch (Exception ex)
+        {
+            IsError = true;
+            StatusMessage = $"Return failed: {ex.Message}";
         }
     }
 }
