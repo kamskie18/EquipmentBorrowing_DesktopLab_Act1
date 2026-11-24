@@ -1,0 +1,850 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Campus Equipment Borrowing API",
+    "version": "v1",
+    "description": "ITSD81 Laboratory Activity 5 - Versioned Resource-Oriented REST API Contract Catalog (API-01 to API-16)"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/api/v1/equipment": {
+      "get": {
+        "tags": ["Equipment"],
+        "summary": "API-01: List Equipment Catalog",
+        "parameters": [
+          {
+            "name": "available",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "boolean" },
+            "description": "Filter available items only"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of equipment items",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/EquipmentResponse" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Malformed boolean parameter",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Equipment"],
+        "summary": "API-08: Register Equipment Item",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EquipmentCreateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Equipment registered successfully",
+            "headers": {
+              "Location": {
+                "schema": { "type": "string" },
+                "description": "Relative URI of created equipment resource"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EquipmentResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing or blank code or name",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate equipment identifier",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/equipment/{id}": {
+      "get": {
+        "tags": ["Equipment"],
+        "summary": "API-07: Get Equipment by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Equipment found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EquipmentResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Equipment not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Equipment"],
+        "summary": "API-09: Update Equipment Details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/EquipmentUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Equipment updated successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/EquipmentResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields or attempt to modify protected isAvailable field",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Equipment not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate equipment identifier conflict",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/equipment/{id}/borrowings": {
+      "get": {
+        "tags": ["Equipment"],
+        "summary": "API-16: Get Borrowing History for Equipment Item",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of active and returned borrowing records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/BorrowingResponse" }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Equipment not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/students": {
+      "get": {
+        "tags": ["Students"],
+        "summary": "API-02: List or Search Students",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string" },
+            "description": "Case-insensitive search by student name or number"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of students",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/StudentResponse" }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Students"],
+        "summary": "API-04: Register Student",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StudentCreateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Student registered successfully",
+            "headers": {
+              "Location": {
+                "schema": { "type": "string" },
+                "description": "Relative URI for API-03"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StudentResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing or blank student number or name",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate student number",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/students/{id}": {
+      "get": {
+        "tags": ["Students"],
+        "summary": "API-03: Get Student by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Student found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StudentResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Student not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Students"],
+        "summary": "API-05: Update Student Details",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StudentUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Student updated successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StudentResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid fields",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Student not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate student number conflict",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/students/{id}/eligibility": {
+      "patch": {
+        "tags": ["Students"],
+        "summary": "API-06: Change Student Eligibility",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StudentEligibilityRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Eligibility updated successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StudentResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing isEligible boolean",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Student not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/students/{id}/borrowings": {
+      "get": {
+        "tags": ["Students"],
+        "summary": "API-15: Get Borrowing History for Student",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Array of active and returned borrowing records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/BorrowingResponse" }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Student not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/borrowings": {
+      "get": {
+        "tags": ["Borrowings"],
+        "summary": "API-14: Search, Filter, and Sort Borrowings",
+        "parameters": [
+          { "name": "search", "in": "query", "schema": { "type": "string" }, "description": "Case-insensitive partial match on student name, student number, or equipment name" },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["Active", "Returned", "All"] }, "description": "Default: All" },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["borrowedDate", "expectedReturnDate"] }, "description": "Default: borrowedDate" },
+          { "name": "direction", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"] }, "description": "Default: asc" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching ordered array of borrowing records",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": { "$ref": "#/components/schemas/BorrowingResponse" }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unsupported filter, sort, or direction value",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Borrowings"],
+        "summary": "API-10: Single Item Borrow",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SingleBorrowRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Borrowing created successfully",
+            "headers": {
+              "Location": {
+                "schema": { "type": "string" },
+                "description": "Relative URI for API-13"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BorrowingResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid date format or expected return date not later than checkout date",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Student or equipment not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Student ineligible, equipment unavailable, or active limit (3) exceeded",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/borrowings/{id}": {
+      "get": {
+        "tags": ["Borrowings"],
+        "summary": "API-13: Get Borrowing by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Borrowing record found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BorrowingResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Borrowing record not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/borrowings/{id}/return": {
+      "post": {
+        "tags": ["Borrowings"],
+        "summary": "API-12: Return Equipment Borrowing",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer" }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Borrowing returned successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BorrowingResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Borrowing not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Borrowing record is already marked as returned",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/checkout-requests": {
+      "post": {
+        "tags": ["Borrowings"],
+        "summary": "API-11: Atomic Multi-Item Checkout",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CheckoutRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "All items checked out atomically",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CheckoutResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Duplicate equipment IDs, fewer than 2 items, or invalid date",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Student or any equipment item not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "Student ineligible, any equipment unavailable, or 3-item limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "Injected test failure / atomic rollback cleanly executed",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/dev/seed": {
+      "post": {
+        "tags": ["System"],
+        "summary": "Reset Database to Section 3 Test Dataset (S1-S4, E1-E7)",
+        "responses": {
+          "200": {
+            "description": "Database reset and seeded successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "System & Database Health Check",
+        "responses": {
+          "200": {
+            "description": "System health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "database": { "type": "string" },
+                    "service": { "type": "string" },
+                    "timestamp": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string", "example": "BAD_REQUEST" },
+          "message": { "type": "string", "example": "Description of the error" }
+        }
+      },
+      "StudentResponse": {
+        "type": "object",
+        "required": ["id", "studentNumber", "fullName", "isEligible"],
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "studentNumber": { "type": "string", "example": "ST-100" },
+          "fullName": { "type": "string", "example": "Ada Cruz" },
+          "contact": { "type": "string", "nullable": true, "example": "ada@campus.edu" },
+          "isEligible": { "type": "boolean", "example": true }
+        }
+      },
+      "StudentCreateRequest": {
+        "type": "object",
+        "required": ["studentNumber", "fullName"],
+        "properties": {
+          "studentNumber": { "type": "string", "example": "ST-500" },
+          "fullName": { "type": "string", "example": "Juan Luna" },
+          "contact": { "type": "string", "nullable": true, "example": "juan@campus.edu" }
+        }
+      },
+      "StudentUpdateRequest": {
+        "type": "object",
+        "required": ["studentNumber", "fullName"],
+        "properties": {
+          "studentNumber": { "type": "string", "example": "ST-500" },
+          "fullName": { "type": "string", "example": "Juan Luna Updated" },
+          "contact": { "type": "string", "nullable": true, "example": "juan.updated@campus.edu" }
+        }
+      },
+      "StudentEligibilityRequest": {
+        "type": "object",
+        "required": ["isEligible"],
+        "properties": {
+          "isEligible": { "type": "boolean", "example": false }
+        }
+      },
+      "EquipmentResponse": {
+        "type": "object",
+        "required": ["id", "equipmentCode", "name", "isAvailable"],
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "equipmentCode": { "type": "string", "example": "EQ-001" },
+          "name": { "type": "string", "example": "Camera" },
+          "description": { "type": "string", "nullable": true, "example": "Digital DSLR Camera" },
+          "isAvailable": { "type": "boolean", "example": false }
+        }
+      },
+      "EquipmentCreateRequest": {
+        "type": "object",
+        "required": ["equipmentCode", "name"],
+        "properties": {
+          "equipmentCode": { "type": "string", "example": "EQ-008" },
+          "name": { "type": "string", "example": "Oscilloscope Probe" },
+          "description": { "type": "string", "nullable": true, "example": "100MHz 10X probe" }
+        }
+      },
+      "EquipmentUpdateRequest": {
+        "type": "object",
+        "required": ["equipmentCode", "name"],
+        "properties": {
+          "equipmentCode": { "type": "string", "example": "EQ-008" },
+          "name": { "type": "string", "example": "Oscilloscope Probe v2" },
+          "description": { "type": "string", "nullable": true, "example": "Upgraded probe" }
+        }
+      },
+      "BorrowingResponse": {
+        "type": "object",
+        "required": ["id", "studentId", "equipmentId", "borrowedDate", "expectedReturnDate", "status"],
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "studentId": { "type": "integer", "example": 1 },
+          "equipmentId": { "type": "integer", "example": 1 },
+          "borrowedDate": { "type": "string", "format": "date", "example": "2026-11-01" },
+          "expectedReturnDate": { "type": "string", "format": "date", "example": "2026-11-09" },
+          "returnedDate": { "type": "string", "format": "date", "nullable": true, "example": null },
+          "status": { "type": "string", "enum": ["Active", "Returned"], "example": "Active" },
+          "studentNumber": { "type": "string", "nullable": true, "example": "ST-100" },
+          "studentName": { "type": "string", "nullable": true, "example": "Ada Cruz" },
+          "equipmentCode": { "type": "string", "nullable": true, "example": "EQ-001" },
+          "equipmentName": { "type": "string", "nullable": true, "example": "Camera" }
+        }
+      },
+      "SingleBorrowRequest": {
+        "type": "object",
+        "required": ["studentId", "equipmentId", "expectedReturnDate"],
+        "properties": {
+          "studentId": { "type": "integer", "example": 4 },
+          "equipmentId": { "type": "integer", "example": 2 },
+          "expectedReturnDate": { "type": "string", "format": "date", "example": "2026-11-12" }
+        }
+      },
+      "CheckoutRequest": {
+        "type": "object",
+        "required": ["studentId", "equipmentIds", "expectedReturnDate"],
+        "properties": {
+          "studentId": { "type": "integer", "example": 4 },
+          "equipmentIds": {
+            "type": "array",
+            "items": { "type": "integer" },
+            "example": [2, 6]
+          },
+          "expectedReturnDate": { "type": "string", "format": "date", "example": "2026-11-12" }
+        }
+      },
+      "CheckoutResponse": {
+        "type": "object",
+        "required": ["borrowings"],
+        "properties": {
+          "borrowings": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BorrowingResponse" }
+          }
+        }
+      }
+    }
+  }
+}

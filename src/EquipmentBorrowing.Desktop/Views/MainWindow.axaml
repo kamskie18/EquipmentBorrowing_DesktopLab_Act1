@@ -20,10 +20,17 @@
                     <Border Background="#2D3748" Height="1" Margin="0,12,0,0"/>
                 </StackPanel>
 
-                <!-- Footer (PostgreSQL indicator) -->
-                <StackPanel DockPanel.Dock="Bottom" Margin="16" Spacing="4">
-                    <Border Background="#2D3748" Height="1" Margin="0,0,0,12"/>
+                <!-- Footer (API indicator & Test Data Reset) -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="16" Spacing="6">
+                    <Border Background="#2D3748" Height="1" Margin="0,0,0,6"/>
                     <TextBlock Text="API: http://localhost:5000" FontSize="11" Foreground="#68D391"/>
+                    <Button Content="Reset Test Data (S1-E7)"
+                            Command="{Binding ResetTestDataCommand}"
+                            HorizontalAlignment="Stretch"
+                            Padding="8,6"
+                            FontSize="11"
+                            Background="#2D3748" Foreground="#E2E8F0"/>
+                    <TextBlock Text="{Binding StatusMessage}" FontSize="10" Foreground="#68D391" TextWrapping="Wrap"/>
                     <TextBlock Text="ITSD 81 — Lab 5 (API Client)" FontSize="10" Foreground="#718096"/>
                 </StackPanel>
 
