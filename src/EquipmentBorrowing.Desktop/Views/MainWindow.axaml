@@ -3,7 +3,7 @@
         xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
         x:Class="EquipmentBorrowing.Desktop.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="Campus Equipment Borrowing System - Lab Activity 4 (PostgreSQL)"
+        Title="Campus Equipment Borrowing System - Lab Activity 5 (REST API Client)"
         Width="1050" Height="680"
         WindowStartupLocation="CenterScreen">
 
