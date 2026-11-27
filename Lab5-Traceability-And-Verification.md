@@ -122,3 +122,15 @@
 - **Observed Result**: `ApiException.IsConnectionFailure` correctly identifies connection drops; `ApiException.IsServerError` correctly identifies 500 errors.
 - **Pass / Fail**: **PASS**
 - **Evidence Reference**: `ApiClientTests.cs:134` (`T08_DistinguishConnectionFailureFromServerError`).
+
+---
+
+## 5. Failures, Diagnosis, Correction, and Retest Log
+
+| # | Related Test | Failure Observed | Diagnosis | Correction Applied | Retest Result |
+|---|---|---|---|---|---|
+| **F-01** | **T01** (OpenAPI / API Host) | `NU1107: Version conflict detected for Microsoft.OpenApi` during `dotnet restore` when configuring OpenAPI docs. | `Swashbuckle.AspNetCore` pulled an incompatible `Microsoft.OpenApi` version against .NET 10's built-in `Microsoft.AspNetCore.OpenApi`. | Removed `Swashbuckle.AspNetCore`; configured native `AddOpenApi()` / `MapOpenApi()` paired with `Scalar.AspNetCore` (`/scalar/v1`) and exported `openapi.json`. | **PASS** — API builds cleanly; `/openapi/v1.json` and `/scalar/v1` return HTTP 200 OK. |
+| **F-02** | **T07** (Desktop HTTP Migration) | Build failed with `CS0234` (missing `Models` namespace) and `CS1061` (`HistoryViewModel` missing `LoadCommand`) after removing `EquipmentBorrowing.Infrastructure` from Desktop. | Desktop ViewModels still referenced old namespaces and `HistoryViewModel` lacked an async `[RelayCommand]` `LoadAsync()` for HTTP reload. | Extracted shared DTOs into `EquipmentBorrowing.Application.Models`, updated ViewModels to use `IEquipmentBorrowingApiClient`, and added `LoadAsync()` to `HistoryViewModel.cs`. | **PASS** — `dotnet build` and `dotnet test` pass (**30/30**), with zero EF Core/Infrastructure references in Desktop. |
+| **F-03** | **T08** (API Unreachable Behavior) | Launching `EquipmentBorrowing.Desktop` alone showed empty Equipment/Student lists and `"Connection Error: API server is unreachable. Please verify http://localhost:5000 is running."` | Desktop client is strictly decoupled from PostgreSQL; `EquipmentBorrowing.Api` was not running on `http://localhost:5000`. | Confirmed expected T08 failure behavior (safe error message, no crash), then started `EquipmentBorrowing.Api` (`dotnet run --project src/EquipmentBorrowing.Api`) and refreshed. | **PASS** — Desktop connected to `http://localhost:5000`, loaded all Equipment and Student records from PostgreSQL. |
+| **F-04** | **T07** (UI Labeling) | Desktop window title still displayed `"Lab Activity 4 (PostgreSQL)"`. | Window title in `MainWindow.axaml` was not updated after migrating from direct PostgreSQL to REST API. | Updated `MainWindow.axaml` title to `"Campus Equipment Borrowing System - Lab Activity 5 (REST API Client)"`. | **PASS** — Rebuilt and verified `dotnet test` (**30/30 Passed**). |
+
